@@ -1,6 +1,9 @@
 package com.aprendegratisingles.app;
 
 import android.Manifest;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -16,6 +19,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.speech.RecognizerIntent;
+import android.speech.RecognitionListener;
+import android.speech.SpeechRecognizer;
 import android.speech.tts.UtteranceProgressListener;
 import android.text.Html;
 import android.text.InputType;
@@ -38,6 +43,7 @@ import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.view.animation.AccelerateDecelerateInterpolator;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -100,7 +106,6 @@ public class MainActivity extends Activity {
     private static final String KEY_PRON_GOOD = "pron_good";
     private static final String VOCAB_STAGE_PREFIX = "vocab_stage_";
     private static final String VOCAB_DUE_PREFIX = "vocab_due_";
-    private static final int REQ_SPEECH = 7101;
     private static final int REQ_EXPORT = 7201;
     private static final int REQ_IMPORT = 7202;
 
@@ -296,6 +301,24 @@ public class MainActivity extends Activity {
             }
     };
 
+    private static final String[][] EXAM_TYPED = {
+            {"Escribe en inglés: Buenos días", "Good morning"},
+            {"Escribe en inglés: Ella es mi hermana", "She is my sister"},
+            {"Completa escribiendo: I ___ happy", "am"},
+            {"Escribe en inglés: martes", "Tuesday"},
+            {"Escribe en inglés: agua", "water"},
+            {"Completa escribiendo: She ___ English every day", "studies"}
+    };
+
+    private static final String[][] EXAM_SPEECH = {
+            {"Pronuncia esta frase", "Good morning"},
+            {"Pronuncia esta frase", "My family is important"},
+            {"Pronuncia esta frase", "He is my brother"},
+            {"Pronuncia esta frase", "What time is it?"},
+            {"Pronuncia esta frase", "The kitchen is small"},
+            {"Pronuncia esta frase", "I go to work every day"}
+    };
+
     private static final String[][] QUIZ = {
             {"¿Qué significa 'Hello'?", "Hola", "Adiós", "Gracias", "Hola"},
             {"¿Cuál es el pronombre para 'ella'?", "He", "She", "They", "She"},
@@ -325,6 +348,14 @@ public class MainActivity extends Activity {
     private int pronunciationIndex = 0;
     private String pendingSpeechExpected = "";
     private TextView pronunciationResult;
+    private SpeechRecognizer speechRecognizer;
+    private TextView speechStatusView;
+    private boolean speechAwardStandaloneXp = true;
+    private SpeechEvaluationCallback pendingSpeechCallback;
+
+    private interface SpeechEvaluationCallback {
+        void onEvaluated(int score, String heard);
+    }
 
     private int onboardingStep = 0;
     private String selectedStartMode = "Desde cero";
@@ -663,7 +694,7 @@ public class MainActivity extends Activity {
                 boolean isCurrent = unitUnlocked && i == current;
                 boolean locked = !unitUnlocked || (!completed && !skippedByPlacement && i != current);
                 box.addView(pathNode(post, i, completed, skippedByPlacement, isCurrent, locked));
-                if (i < to) box.addView(pathConnector(i, current));
+                if (i < to) box.addView(pathConnector(i, current, completed || skippedByPlacement));
             }
 
             box.addView(unitExamCard(unit, ordered, startIndex, done, placementPassed));
@@ -707,19 +738,22 @@ public class MainActivity extends Activity {
         if (completed || placementPassed) node.setText("✓");
         else if (locked) node.setText("🔒");
         else node.setText("▶");
-        node.setTextSize(current ? 24 : 20);
+        node.setTextSize(current ? 25 : 20);
         node.setTextColor(Color.WHITE);
         node.setAllCaps(false);
         node.setTypeface(Typeface.DEFAULT_BOLD);
+
         GradientDrawable circle = new GradientDrawable();
         circle.setShape(GradientDrawable.OVAL);
         int fill = completed ? GREEN : placementPassed ? PURPLE : locked ? Color.rgb(184, 196, 207) : BLUE;
         circle.setColor(fill);
-        circle.setStroke(dp(5), current ? Color.rgb(168, 217, 255) : Color.argb(0, 0, 0, 0));
+        circle.setStroke(dp(current ? 6 : 4), current ? Color.rgb(173, 220, 255) : Color.argb(0, 0, 0, 0));
         node.setBackground(circle);
-        node.setElevation(current ? dp(8) : dp(3));
-        LinearLayout.LayoutParams nodeLp = new LinearLayout.LayoutParams(current ? dp(82) : dp(72), current ? dp(82) : dp(72));
+        node.setElevation(current ? dp(10) : dp(3));
+        LinearLayout.LayoutParams nodeLp = new LinearLayout.LayoutParams(current ? dp(86) : dp(72), current ? dp(86) : dp(72));
         nodeWrap.addView(node, nodeLp);
+
+        if (current) animatePlayNode(node);
 
         TextView name = new TextView(this);
         name.setText(shortLessonTitle(p.title));
@@ -733,16 +767,24 @@ public class MainActivity extends Activity {
         nodeWrap.addView(name, nameLp);
 
         if (current) {
-            TextView start = label("SIGUIENTE", BLUE);
+            TextView start = label("JUGAR · SIGUIENTE", BLUE);
             start.setGravity(Gravity.CENTER);
             nodeWrap.addView(start);
+        } else if (completed || placementPassed) {
+            TextView doneLabel = label("COMPLETADA", GREEN_DARK);
+            doneLabel.setGravity(Gravity.CENTER);
+            nodeWrap.addView(doneLabel);
         }
 
         node.setOnClickListener(v -> {
             if (locked) {
-                Toast.makeText(this, "Completa la lección anterior para desbloquearla", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Completa la etapa anterior para desbloquearla", Toast.LENGTH_SHORT).show();
+                shakeLockedNode(node);
             } else {
-                openPost(p);
+                node.animate().scaleX(0.92f).scaleY(0.92f).setDuration(90).withEndAction(() -> {
+                    node.animate().scaleX(1f).scaleY(1f).setDuration(110).start();
+                    openPost(p);
+                }).start();
             }
         });
         name.setOnClickListener(v -> node.performClick());
@@ -752,12 +794,49 @@ public class MainActivity extends Activity {
         return row;
     }
 
-    private View pathConnector(int index, int current) {
+    private void animatePlayNode(View node) {
+        ObjectAnimator sx = ObjectAnimator.ofFloat(node, View.SCALE_X, 1f, 1.09f, 1f);
+        ObjectAnimator sy = ObjectAnimator.ofFloat(node, View.SCALE_Y, 1f, 1.09f, 1f);
+        sx.setDuration(1250);
+        sy.setDuration(1250);
+        sx.setRepeatCount(ValueAnimator.INFINITE);
+        sy.setRepeatCount(ValueAnimator.INFINITE);
+        sx.setRepeatMode(ValueAnimator.RESTART);
+        sy.setRepeatMode(ValueAnimator.RESTART);
+        AnimatorSet set = new AnimatorSet();
+        set.setInterpolator(new AccelerateDecelerateInterpolator());
+        set.playTogether(sx, sy);
+        set.start();
+    }
+
+    private void shakeLockedNode(View node) {
+        ObjectAnimator shake = ObjectAnimator.ofFloat(node, View.TRANSLATION_X, 0f, -dp(6), dp(6), -dp(4), dp(4), 0f);
+        shake.setDuration(360);
+        shake.start();
+    }
+
+    private View pathConnector(int index, int current, boolean completedBefore) {
         LinearLayout holder = horizontal();
         holder.setGravity(Gravity.CENTER);
+        boolean unlockedTrail = completedBefore || (current >= 0 && index < current);
         View line = new View(this);
-        line.setBackgroundColor(index < current ? GREEN : Color.rgb(214, 223, 231));
-        holder.addView(line, new LinearLayout.LayoutParams(dp(6), dp(30)));
+        GradientDrawable trail = new GradientDrawable();
+        trail.setColor(unlockedTrail ? GREEN : Color.rgb(214, 223, 231));
+        trail.setCornerRadius(dp(6));
+        line.setBackground(trail);
+        holder.addView(line, new LinearLayout.LayoutParams(dp(8), dp(38)));
+
+        if (unlockedTrail && index == current - 1) {
+            line.setPivotY(0f);
+            ObjectAnimator fill = ObjectAnimator.ofFloat(line, View.SCALE_Y, 0.15f, 1f);
+            fill.setDuration(600);
+            fill.start();
+            ObjectAnimator glow = ObjectAnimator.ofFloat(line, View.ALPHA, 0.55f, 1f, 0.55f);
+            glow.setDuration(1100);
+            glow.setRepeatCount(ValueAnimator.INFINITE);
+            glow.setRepeatMode(ValueAnimator.RESTART);
+            glow.start();
+        }
         return holder;
     }
 
@@ -1020,7 +1099,7 @@ public class MainActivity extends Activity {
             c.addView(body("La siguiente unidad está desbloqueada."));
         } else if (ready) {
             c.addView(heading("Demuestra lo aprendido", 19, BLUE_DARK));
-            c.addView(body("5 preguntas · necesitas 4 correctas (80 %) para desbloquear la siguiente unidad."));
+            c.addView(body("7 retos · 5 de opción, 1 escribiendo y 1 hablando. Necesitas 6 correctas para desbloquear la siguiente unidad."));
             c.addView(primaryButton("🎓 Hacer examen", () -> showUnitExam(unit)));
         } else {
             c.addView(heading("🔒 Examen bloqueado", 19, MUTED));
@@ -1038,31 +1117,59 @@ public class MainActivity extends Activity {
 
         box.addView(label("UNIDAD " + (unit + 1), BLUE));
         box.addView(heading("Examen · " + UNIT_NAMES[unit], 25, BLUE_DARK));
-        box.addView(body("Necesitas 4 de 5 respuestas correctas para aprobar."));
+        box.addView(body("7 retos: 5 de opción múltiple, 1 escribiendo y 1 pronunciando. Necesitas 6 de 7 para aprobar."));
 
         String[][] questions = UNIT_EXAMS[unit];
-        final int[] answered = {0};
-        final int[] correct = {0};
-        final boolean[] finished = {false};
         final long startedAt = System.currentTimeMillis();
         LinearLayout resultHost = verticalBox();
+
+        class ExamTracker {
+            int answered = 0;
+            int correct = 0;
+            boolean finished = false;
+
+            void record(boolean ok) {
+                if (finished) return;
+                answered++;
+                if (ok) correct++;
+                recordGenericAnswer(ok);
+                if (answered < 7) return;
+
+                finished = true;
+                addStudySession(startedAt);
+                recordStudyActivity();
+                boolean pass = correct >= 6;
+                if (pass) {
+                    Set<String> exams = examPassedSet();
+                    boolean firstPass = exams.add(String.valueOf(unit));
+                    prefs.edit().putStringSet(KEY_EXAMS, new HashSet<>(exams)).apply();
+                    if (firstPass) awardXp(120);
+                }
+
+                LinearLayout result = card();
+                result.setBackground(rounded(pass ? Color.rgb(235, 250, 240) : Color.rgb(255, 244, 244), pass ? Color.rgb(185, 230, 197) : Color.rgb(244, 198, 198), 20));
+                result.addView(heading(pass ? "🎉 ¡Unidad superada!" : "Casi lo tienes", 22, pass ? GREEN_DARK : RED));
+                result.addView(body("Resultado: " + correct + "/7" + (pass ? " · +120 XP · Nueva etapa desbloqueada" : " · necesitas 6/7")));
+                result.addView(primaryButton(pass ? "Continuar ruta" : "Reintentar", pass ? MainActivity.this::showPath : () -> showUnitExam(unit)));
+                resultHost.addView(result);
+            }
+        }
+        ExamTracker tracker = new ExamTracker();
 
         for (int qIndex = 0; qIndex < questions.length; qIndex++) {
             String[] q = questions[qIndex];
             LinearLayout c = card();
-            c.addView(label("PREGUNTA " + (qIndex + 1) + " DE " + questions.length, BLUE));
+            c.addView(label("PREGUNTA " + (qIndex + 1) + " DE 7", BLUE));
             c.addView(heading(q[0], 18, TEXT));
             LinearLayout optionsHost = verticalBox();
             for (int a = 1; a <= 3; a++) {
                 final String option = q[a];
                 Button b = secondaryButton(option, () -> {});
                 b.setOnClickListener(v -> {
-                    if (!v.isEnabled() || finished[0]) return;
+                    if (!v.isEnabled() || tracker.finished) return;
                     for (int k = 0; k < optionsHost.getChildCount(); k++) optionsHost.getChildAt(k).setEnabled(false);
                     boolean ok = option.equals(q[4]);
-                    answered[0]++;
                     if (ok) {
-                        correct[0]++;
                         ((Button) v).setText("✓ " + option);
                         ((Button) v).setTextColor(GREEN_DARK);
                         awardXp(15);
@@ -1071,32 +1178,85 @@ public class MainActivity extends Activity {
                         ((Button) v).setTextColor(RED);
                         loseHeart();
                     }
-                    recordGenericAnswer(ok);
-
-                    if (answered[0] == questions.length) {
-                        finished[0] = true;
-                        addStudySession(startedAt);
-                        recordStudyActivity();
-                        boolean pass = correct[0] >= 4;
-                        if (pass) {
-                            Set<String> exams = examPassedSet();
-                            boolean firstPass = exams.add(String.valueOf(unit));
-                            prefs.edit().putStringSet(KEY_EXAMS, new HashSet<>(exams)).apply();
-                            if (firstPass) awardXp(100);
-                        }
-                        LinearLayout result = card();
-                        result.setBackground(rounded(pass ? Color.rgb(235, 250, 240) : Color.rgb(255, 244, 244), pass ? Color.rgb(185, 230, 197) : Color.rgb(244, 198, 198), 20));
-                        result.addView(heading(pass ? "🎉 Examen aprobado" : "Aún no", 22, pass ? GREEN_DARK : RED));
-                        result.addView(body("Resultado: " + correct[0] + "/" + questions.length + (pass ? " · +100 XP de aprobación" : " · necesitas 4/5")));
-                        result.addView(primaryButton(pass ? "Continuar ruta" : "Reintentar", pass ? this::showPath : () -> showUnitExam(unit)));
-                        resultHost.addView(result);
-                    }
+                    tracker.record(ok);
                 });
                 optionsHost.addView(b);
             }
             c.addView(optionsHost);
             box.addView(c);
         }
+
+        String[] typed = EXAM_TYPED[unit];
+        LinearLayout writeCard = card();
+        writeCard.addView(label("PREGUNTA 6 DE 7 · ESCRIBE", PURPLE));
+        writeCard.addView(heading(typed[0], 18, TEXT));
+        EditText answer = new EditText(this);
+        answer.setHint("Escribe tu respuesta aquí");
+        answer.setTextSize(18);
+        answer.setSingleLine(true);
+        answer.setPadding(dp(14), dp(10), dp(14), dp(10));
+        answer.setBackground(rounded(Color.WHITE, BORDER, 14));
+        writeCard.addView(answer, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(54)));
+        TextView writeResult = body("");
+        Button checkWrite = primaryButton("Comprobar respuesta", () -> {});
+        checkWrite.setOnClickListener(v -> {
+            if (!v.isEnabled() || tracker.finished) return;
+            String given = answer.getText().toString();
+            if (given.trim().isEmpty()) {
+                Toast.makeText(this, "Escribe una respuesta primero", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            boolean ok = normalizeAnswer(given).equals(normalizeAnswer(typed[1]));
+            answer.setEnabled(false);
+            v.setEnabled(false);
+            if (ok) {
+                writeResult.setText("✓ ¡Correcto!");
+                writeResult.setTextColor(GREEN_DARK);
+                awardXp(20);
+            } else {
+                writeResult.setText("✗ Respuesta correcta: " + typed[1]);
+                writeResult.setTextColor(RED);
+                loseHeart();
+            }
+            tracker.record(ok);
+        });
+        writeCard.addView(checkWrite);
+        writeCard.addView(writeResult);
+        box.addView(writeCard);
+
+        String[] speech = EXAM_SPEECH[unit];
+        LinearLayout speechCard = card();
+        speechCard.addView(label("PREGUNTA 7 DE 7 · PRONUNCIACIÓN", GREEN));
+        speechCard.addView(heading(speech[0], 18, TEXT));
+        TextView targetPhrase = heading(speech[1], 23, BLUE_DARK);
+        targetPhrase.setGravity(Gravity.CENTER);
+        speechCard.addView(targetPhrase);
+        LinearLayout speechButtons = horizontal();
+        speechButtons.addView(secondaryButton("🔊 Escuchar", () -> speakNative(speech[1])), new LinearLayout.LayoutParams(0, dp(50), 1f));
+        TextView examSpeechResult = body("Toca Hablar y pronuncia la frase.");
+        examSpeechResult.setGravity(Gravity.CENTER);
+        Button speakButton = primaryButton("🎙️ Hablar", () -> {});
+        LinearLayout.LayoutParams speakLp = new LinearLayout.LayoutParams(0, dp(50), 1f);
+        speakLp.setMargins(dp(8), 0, 0, 0);
+        speechButtons.addView(speakButton, speakLp);
+        speechCard.addView(speechButtons);
+        speechCard.addView(examSpeechResult);
+        speakButton.setOnClickListener(v -> {
+            if (!v.isEnabled() || tracker.finished) return;
+            startSpeechRecognition(speech[1], examSpeechResult, false, (score, heard) -> {
+                if (!speakButton.isEnabled() || tracker.finished) return;
+                boolean ok = score >= 70;
+                speakButton.setEnabled(false);
+                if (ok) {
+                    awardXp(20);
+                } else {
+                    loseHeart();
+                }
+                tracker.record(ok);
+            });
+        });
+        box.addView(speechCard);
+
         box.addView(resultHost);
         setContent(scroll);
     }
@@ -1645,7 +1805,7 @@ public class MainActivity extends Activity {
             prefs.edit().putStringSet(KEY_COMPLETED, set).apply();
             awardXp(50);
             recordStudyActivity();
-            Toast.makeText(this, "Lección completada · +50 XP", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Lección completada · +50 XP · ¡Nueva etapa desbloqueada!", Toast.LENGTH_LONG).show();
         }
         showPath();
     }
@@ -1994,7 +2154,7 @@ public class MainActivity extends Activity {
 
         String[] item = PRONUNCIATION_PHRASES[pronunciationIndex];
         box.addView(heading("Pronunciación", 27, BLUE_DARK));
-        box.addView(body("Escucha la frase, repítela y deja que Android reconozca lo que dijiste."));
+        box.addView(body("Escucha la frase, repítela y recibe una evaluación dentro de la app."));
 
         LinearLayout card = card();
         card.addView(label("FRASE " + (pronunciationIndex + 1) + "/" + PRONUNCIATION_PHRASES.length, GREEN));
@@ -2010,7 +2170,7 @@ public class MainActivity extends Activity {
         micLp.setMargins(dp(8), 0, 0, 0);
         buttons.addView(primaryButton("🎙️ Hablar", () -> startSpeechRecognition(item[0])), micLp);
         card.addView(buttons);
-        pronunciationResult = body("Pulsa Hablar cuando estés listo.");
+        pronunciationResult = body("Pulsa Hablar cuando estés listo. El micrófono funciona dentro de la app.");
         pronunciationResult.setGravity(Gravity.CENTER);
         card.addView(pronunciationResult);
         box.addView(card);
@@ -2036,20 +2196,93 @@ public class MainActivity extends Activity {
     }
 
     private void startSpeechRecognition(String expected) {
+        startSpeechRecognition(expected, pronunciationResult, true, null);
+    }
+
+    private void startSpeechRecognition(String expected, TextView statusView, boolean awardStandaloneXp, SpeechEvaluationCallback callback) {
+        pendingSpeechExpected = expected;
+        speechStatusView = statusView;
+        speechAwardStandaloneXp = awardStandaloneXp;
+        pendingSpeechCallback = callback;
+
         if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            pendingSpeechExpected = expected;
             requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 7110);
             return;
         }
-        pendingSpeechExpected = expected;
+        beginInternalSpeechRecognition();
+    }
+
+    private void beginInternalSpeechRecognition() {
+        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+            setSpeechStatus("El reconocimiento de voz no está disponible en este teléfono.", RED);
+            return;
+        }
+
+        if (speechRecognizer == null) {
+            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
+            speechRecognizer.setRecognitionListener(new RecognitionListener() {
+                @Override public void onReadyForSpeech(Bundle params) { setSpeechStatus("🎙️ Escuchando… habla ahora", BLUE); }
+                @Override public void onBeginningOfSpeech() { setSpeechStatus("Te escucho…", BLUE_DARK); }
+                @Override public void onRmsChanged(float rmsdB) { }
+                @Override public void onBufferReceived(byte[] buffer) { }
+                @Override public void onEndOfSpeech() { setSpeechStatus("Evaluando pronunciación…", MUTED); }
+                @Override public void onError(int error) {
+                    String message;
+                    switch (error) {
+                        case SpeechRecognizer.ERROR_NO_MATCH: message = "No pude reconocer la frase. Inténtalo otra vez."; break;
+                        case SpeechRecognizer.ERROR_SPEECH_TIMEOUT: message = "No escuché tu voz. Toca Hablar e inténtalo otra vez."; break;
+                        case SpeechRecognizer.ERROR_AUDIO: message = "No pude acceder al audio del micrófono."; break;
+                        case SpeechRecognizer.ERROR_NETWORK: case SpeechRecognizer.ERROR_NETWORK_TIMEOUT: message = "No se pudo procesar la voz. Revisa tu conexión e inténtalo otra vez."; break;
+                        default: message = "No pude evaluar la pronunciación. Inténtalo otra vez.";
+                    }
+                    setSpeechStatus(message, RED);
+                }
+                @Override public void onResults(Bundle results) {
+                    ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                    String heard = (matches == null || matches.isEmpty()) ? "" : matches.get(0);
+                    handleInternalSpeechResult(heard);
+                }
+                @Override public void onPartialResults(Bundle partialResults) { }
+                @Override public void onEvent(int eventType, Bundle params) { }
+            });
+        } else {
+            speechRecognizer.cancel();
+        }
+
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US");
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Di la frase en inglés");
-        try {
-            startActivityForResult(intent, REQ_SPEECH);
-        } catch (Exception e) {
-            Toast.makeText(this, "El reconocimiento de voz no está disponible en este teléfono", Toast.LENGTH_LONG).show();
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "en-US");
+        intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false);
+        intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
+        speechRecognizer.startListening(intent);
+    }
+
+    private void handleInternalSpeechResult(String heard) {
+        int score = pronunciationScore(pendingSpeechExpected, heard);
+        int attempts = prefs.getInt(KEY_PRON_ATTEMPTS, 0) + 1;
+        int good = prefs.getInt(KEY_PRON_GOOD, 0) + (score >= 70 ? 1 : 0);
+        prefs.edit().putInt(KEY_PRON_ATTEMPTS, attempts).putInt(KEY_PRON_GOOD, good).apply();
+
+        if (score >= 70 && speechAwardStandaloneXp) {
+            awardXp(10);
+            recordStudyActivity();
+        }
+
+        if (score >= 90) setSpeechStatus("¡Excelente pronunciación! ✅\nPrecisión: " + score + "%", GREEN_DARK);
+        else if (score >= 70) setSpeechStatus("¡Muy bien! ✅\nPrecisión: " + score + "%", GREEN_DARK);
+        else if (score >= 50) setSpeechStatus("Casi. Inténtalo otra vez.\nPrecisión: " + score + "%", ORANGE);
+        else setSpeechStatus("Vamos otra vez.\nPrecisión: " + score + "%", RED);
+
+        SpeechEvaluationCallback callback = pendingSpeechCallback;
+        pendingSpeechCallback = null;
+        if (callback != null) callback.onEvaluated(score, heard);
+    }
+
+    private void setSpeechStatus(String text, int color) {
+        if (speechStatusView != null) {
+            speechStatusView.setText(text);
+            speechStatusView.setTextColor(color);
         }
     }
 
@@ -2400,22 +2633,7 @@ public class MainActivity extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode != RESULT_OK || data == null) return;
-        if (requestCode == REQ_SPEECH) {
-            ArrayList<String> results = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-            String heard = (results == null || results.isEmpty()) ? "" : results.get(0);
-            int score = pronunciationScore(pendingSpeechExpected, heard);
-            int attempts = prefs.getInt(KEY_PRON_ATTEMPTS, 0) + 1;
-            int good = prefs.getInt(KEY_PRON_GOOD, 0) + (score >= 70 ? 1 : 0);
-            prefs.edit().putInt(KEY_PRON_ATTEMPTS, attempts).putInt(KEY_PRON_GOOD, good).apply();
-            if (score >= 70) {
-                awardXp(10);
-                recordStudyActivity();
-            }
-            if (pronunciationResult != null) {
-                pronunciationResult.setText("Android entendió: “" + heard + "”\nPuntuación aproximada: " + score + "%" + (score >= 70 ? " ✓" : " · Intenta otra vez"));
-                pronunciationResult.setTextColor(score >= 70 ? GREEN_DARK : RED);
-            }
-        } else if (requestCode == REQ_EXPORT) {
+        if (requestCode == REQ_EXPORT) {
             saveProgressToUri(data.getData());
         } else if (requestCode == REQ_IMPORT) {
             restoreProgressFromUri(data.getData());
@@ -2426,7 +2644,9 @@ public class MainActivity extends Activity {
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 7110 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            startSpeechRecognition(pendingSpeechExpected);
+            beginInternalSpeechRecognition();
+        } else if (requestCode == 7110) {
+            setSpeechStatus("Necesitas permitir el micrófono para practicar pronunciación.", RED);
         }
     }
 
@@ -2587,6 +2807,11 @@ public class MainActivity extends Activity {
         if (textToSpeech != null) {
             textToSpeech.stop();
             textToSpeech.shutdown();
+        }
+        if (speechRecognizer != null) {
+            speechRecognizer.cancel();
+            speechRecognizer.destroy();
+            speechRecognizer = null;
         }
         super.onDestroy();
     }

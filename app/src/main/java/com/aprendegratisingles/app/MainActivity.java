@@ -344,6 +344,11 @@ public class MainActivity extends Activity {
     private final List<PostItem> posts = new ArrayList<>();
     private SharedPreferences prefs;
     private String currentSection = "path";
+    private LinearLayout bottomNav;
+    private LinearLayout navPathBtn;
+    private LinearLayout navPracticeBtn;
+    private LinearLayout navAchievementsBtn;
+    private LinearLayout navProfileBtn;
     private boolean shellBuilt = false;
     private int pronunciationIndex = 0;
     private String pendingSpeechExpected = "";
@@ -597,17 +602,27 @@ public class MainActivity extends Activity {
         contentHost = new FrameLayout(this);
         root.addView(contentHost, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
-        LinearLayout nav = horizontal();
-        nav.setPadding(dp(4), dp(5), dp(4), dp(6));
-        nav.setBackgroundColor(Color.WHITE);
-        nav.setElevation(dp(8));
-        addBottomButton(nav, "🗺️\nRuta", this::showPath);
-        addBottomButton(nav, "🧠\nPracticar", this::showPracticeHub);
-        addBottomButton(nav, "🏆\nLogros", this::showAchievements);
-        addBottomButton(nav, "👤\nPerfil", this::showProfile);
-        root.addView(nav, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        bottomNav = horizontal();
+        bottomNav.setPadding(dp(8), dp(8), dp(8), dp(10));
+        bottomNav.setBackground(rounded(Color.argb(250, 255, 255, 255), Color.rgb(224, 233, 242), 24));
+        bottomNav.setElevation(dp(10));
+
+        navPathBtn = createBottomNavItem("🗺️", "Ruta", this::showPath);
+        navPracticeBtn = createBottomNavItem("🧠", "Practicar", this::showPracticeHub);
+        navAchievementsBtn = createBottomNavItem("🏆", "Logros", this::showAchievements);
+        navProfileBtn = createBottomNavItem("👤", "Perfil", this::showProfile);
+
+        bottomNav.addView(navPathBtn, weightedBottomNavParams(false));
+        bottomNav.addView(navPracticeBtn, weightedBottomNavParams(true));
+        bottomNav.addView(navAchievementsBtn, weightedBottomNavParams(true));
+        bottomNav.addView(navProfileBtn, weightedBottomNavParams(true));
+
+        LinearLayout.LayoutParams navLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        navLp.setMargins(dp(10), dp(2), dp(10), dp(10));
+        root.addView(bottomNav, navLp);
 
         setContentView(root);
+        refreshBottomNav();
         updateHeaderStats();
     }
 
@@ -627,15 +642,74 @@ public class MainActivity extends Activity {
         return v;
     }
 
-    private void addBottomButton(LinearLayout nav, String text, Runnable action) {
-        Button b = new Button(this);
-        b.setText(text);
-        b.setTextSize(10);
-        b.setAllCaps(false);
-        b.setTextColor(BLUE_DARK);
-        b.setBackgroundColor(Color.TRANSPARENT);
-        b.setOnClickListener(v -> action.run());
-        nav.addView(b, new LinearLayout.LayoutParams(0, dp(58), 1f));
+    private LinearLayout createBottomNavItem(String icon, String text, Runnable action) {
+        LinearLayout item = verticalBox();
+        item.setGravity(Gravity.CENTER);
+        item.setPadding(dp(8), dp(8), dp(8), dp(8));
+        item.setClickable(true);
+        item.setFocusable(true);
+
+        TextView iconView = new TextView(this);
+        iconView.setText(icon);
+        iconView.setTextSize(20);
+        iconView.setGravity(Gravity.CENTER);
+        iconView.setTypeface(Typeface.DEFAULT_BOLD);
+
+        TextView textView = new TextView(this);
+        textView.setText(text);
+        textView.setTextSize(11);
+        textView.setGravity(Gravity.CENTER);
+        textView.setTypeface(Typeface.DEFAULT_BOLD);
+
+        item.addView(iconView);
+        item.addView(textView);
+        item.setTag(new TextView[]{iconView, textView});
+        item.setOnClickListener(v -> {
+            v.animate().scaleX(0.96f).scaleY(0.96f).setDuration(80).withEndAction(() -> {
+                v.animate().scaleX(1f).scaleY(1f).setDuration(110).start();
+                action.run();
+            }).start();
+        });
+        return item;
+    }
+
+    private LinearLayout.LayoutParams weightedBottomNavParams(boolean withStartMargin) {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        if (withStartMargin) lp.setMargins(dp(8), 0, 0, 0);
+        return lp;
+    }
+
+    private void refreshBottomNav() {
+        if (bottomNav == null) return;
+        styleBottomNavItem(navPathBtn, currentSection.equals("path") || currentSection.equals("reader") || currentSection.equals("lessons") || currentSection.equals("favorites"), BLUE);
+        styleBottomNavItem(navPracticeBtn, currentSection.equals("practice"), GREEN);
+        styleBottomNavItem(navAchievementsBtn, currentSection.equals("achievements"), ORANGE);
+        styleBottomNavItem(navProfileBtn, currentSection.equals("profile"), PURPLE);
+    }
+
+    private void styleBottomNavItem(LinearLayout item, boolean active, int accent) {
+        if (item == null) return;
+        Object tag = item.getTag();
+        if (!(tag instanceof TextView[])) return;
+        TextView[] parts = (TextView[]) tag;
+        GradientDrawable bg = new GradientDrawable();
+        bg.setCornerRadius(dp(20));
+        if (active) {
+            bg.setColors(new int[]{accent, BLUE_DARK});
+            bg.setOrientation(GradientDrawable.Orientation.TOP_BOTTOM);
+            bg.setStroke(dp(1), Color.argb(55, 255, 255, 255));
+            item.setElevation(dp(8));
+            parts[0].setTextColor(Color.WHITE);
+            parts[1].setTextColor(Color.WHITE);
+        } else {
+            bg.setColor(Color.rgb(245, 249, 252));
+            bg.setStroke(dp(1), Color.rgb(227, 235, 243));
+            item.setElevation(dp(1));
+            parts[0].setTextColor(accent);
+            parts[1].setTextColor(BLUE_DARK);
+        }
+        item.setBackground(bg);
+        item.animate().scaleX(active ? 1.04f : 1f).scaleY(active ? 1.04f : 1f).setDuration(180).start();
     }
 
     private void showPath() {
@@ -2661,6 +2735,7 @@ public class MainActivity extends Activity {
         if (contentHost == null) return;
         contentHost.removeAllViews();
         contentHost.addView(view, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        refreshBottomNav();
     }
 
     private LinearLayout verticalBox() {

@@ -6,9 +6,11 @@ import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.view.Gravity;
 import android.view.View;
-import android.webkit.DownloadListener;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -20,6 +22,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.Locale;
+
 public class MainActivity extends Activity {
 
     private static final String HOME = "https://www.aprendegratisingles.com/";
@@ -29,14 +33,50 @@ public class MainActivity extends Activity {
 
     private WebView webView;
     private ProgressBar progressBar;
+    private TextToSpeech textToSpeech;
+    private boolean ttsReady = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().setStatusBarColor(BLUE_DARK);
+        initTextToSpeech();
         buildUi();
         configureWebView();
         webView.loadUrl(HOME);
+    }
+
+    private void initTextToSpeech() {
+        textToSpeech = new TextToSpeech(this, status -> {
+            if (status == TextToSpeech.SUCCESS) {
+                int result = textToSpeech.setLanguage(Locale.US);
+                ttsReady = result != TextToSpeech.LANG_MISSING_DATA
+                        && result != TextToSpeech.LANG_NOT_SUPPORTED;
+                textToSpeech.setSpeechRate(0.88f);
+
+                textToSpeech.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                    @Override
+                    public void onStart(String utteranceId) { }
+
+                    @Override
+                    public void onDone(String utteranceId) {
+                        notifyWebSpeechEnded(utteranceId);
+                    }
+
+                    @Override
+                    public void onError(String utteranceId) {
+                        notifyWebSpeechEnded(utteranceId);
+                    }
+                });
+            }
+        });
+    }
+
+    private void notifyWebSpeechEnded(String utteranceId) {
+        if (webView == null || utteranceId == null) return;
+        runOnUiThread(() -> webView.evaluateJavascript(
+                "window.__agiTtsDone && window.__agiTtsDone('" + utteranceId + "');",
+                null));
     }
 
     private void buildUi() {
@@ -113,7 +153,9 @@ public class MainActivity extends Activity {
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        settings.setUserAgentString(settings.getUserAgentString() + " AprendeGratisInglesApp/1.0");
+        settings.setUserAgentString(settings.getUserAgentString() + " AprendeGratisInglesApp/1.1");
+
+        webView.addJavascriptInterface(new NativeTtsBridge(), "AndroidTTS");
 
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
@@ -138,6 +180,12 @@ public class MainActivity extends Activity {
                 }
                 return true;
             }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                injectNativeSpeechSynthesis();
+            }
         });
 
         webView.setDownloadListener((url, userAgent, contentDisposition, mimetype, contentLength) -> {
@@ -148,6 +196,54 @@ public class MainActivity extends Activity {
                 Toast.makeText(this, "No se pudo iniciar la descarga", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void injectNativeSpeechSynthesis() {
+        String js = "(function(){"
+                + "if(!window.AndroidTTS){return;}"
+                + "var pending={};var seq=0;"
+                + "window.SpeechSynthesisUtterance=function(text){this.text=text||'';this.lang='en-US';this.rate=1;this.voice=null;this.onend=null;this.onerror=null;};"
+                + "window.__agiTtsDone=function(id){var u=pending[id];if(!u)return;delete pending[id];if(typeof u.onend==='function'){try{u.onend({utterance:u});}catch(e){}}};"
+                + "window.speechSynthesis={"
+                + "getVoices:function(){return [{name:'Android English',lang:'en-US',default:true}];},"
+                + "cancel:function(){pending={};AndroidTTS.stop();},"
+                + "speak:function(u){if(!u)return;var id='agi_'+(++seq);pending[id]=u;AndroidTTS.speak(String(u.text||''),Number(u.rate||0.88),String(u.lang||'en-US'),id);},"
+                + "pause:function(){},resume:function(){}"
+                + "};"
+                + "})();";
+        webView.evaluateJavascript(js, null);
+    }
+
+    private class NativeTtsBridge {
+        @JavascriptInterface
+        public void speak(String text, double rate, String lang, String utteranceId) {
+            runOnUiThread(() -> {
+                if (!ttsReady || textToSpeech == null) {
+                    Toast.makeText(MainActivity.this,
+                            "El audio todavía se está preparando. Inténtalo de nuevo en un momento.",
+                            Toast.LENGTH_SHORT).show();
+                    notifyWebSpeechEnded(utteranceId);
+                    return;
+                }
+
+                Locale locale = Locale.US;
+                if (lang != null && lang.toLowerCase(Locale.ROOT).startsWith("en-gb")) {
+                    locale = Locale.UK;
+                }
+                textToSpeech.setLanguage(locale);
+
+                float safeRate = (float) Math.max(0.3, Math.min(1.5, rate));
+                textToSpeech.setSpeechRate(safeRate);
+                textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId);
+            });
+        }
+
+        @JavascriptInterface
+        public void stop() {
+            runOnUiThread(() -> {
+                if (textToSpeech != null) textToSpeech.stop();
+            });
+        }
     }
 
     @Override
@@ -161,6 +257,10 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (textToSpeech != null) {
+            textToSpeech.stop();
+            textToSpeech.shutdown();
+        }
         if (webView != null) {
             webView.loadUrl("about:blank");
             webView.stopLoading();

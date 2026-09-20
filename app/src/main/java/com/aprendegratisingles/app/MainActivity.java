@@ -81,6 +81,14 @@ public class MainActivity extends Activity {
     private static final String KEY_LAST_STUDY_DAY = "last_study_day";
     private static final String KEY_LIVES = "lives";
     private static final String KEY_ERRORS = "quiz_errors";
+    private static final String KEY_EXAMS = "unit_exams_passed";
+    private static final String KEY_TOTAL_ANSWERED = "total_answered";
+    private static final String KEY_TOTAL_CORRECT = "total_correct";
+    private static final String KEY_STUDY_MINUTES = "study_minutes";
+    private static final String KEY_STUDY_SESSIONS = "study_sessions";
+    private static final String KEY_MASTERED = "mastered_exercises";
+    private static final String KEY_LEVEL_TEST_SCORE = "level_test_score";
+    private static final String WEAK_PREFIX = "weak_";
 
     private static final int BLUE = Color.rgb(13, 115, 217);
     private static final int BLUE_DARK = Color.rgb(7, 63, 141);
@@ -99,6 +107,134 @@ public class MainActivity extends Activity {
             "pronombres personales", "verbo to be", "a an y the", "adjetivos posesivos", "preguntas basicas",
             "dias de la semana", "meses del ano", "decir la hora", "colores", "partes del cuerpo",
             "comida y bebidas", "la casa", "presente simple", "rutina diaria"
+    };
+
+    private static final String[] UNIT_NAMES = {
+            "Primeros pasos", "Personas y acciones", "Gramática esencial",
+            "Tiempo y fechas", "Mundo cotidiano", "Presente simple y rutina"
+    };
+
+    private static final int[] UNIT_START = {0, 3, 7, 11, 14, 18};
+    private static final int[] UNIT_END = {2, 6, 10, 13, 17, 19};
+
+    private static final int TYPE_CHOICE = 0;
+    private static final int TYPE_ORDER = 1;
+    private static final int TYPE_FILL = 2;
+    private static final int TYPE_LISTEN_CHOICE = 3;
+    private static final int TYPE_WRITE_LISTEN = 4;
+
+    private static class Exercise {
+        final int type;
+        final int unit;
+        final String prompt;
+        final String answer;
+        final String speak;
+        final String[] options;
+
+        Exercise(int type, int unit, String prompt, String answer, String speak, String... options) {
+            this.type = type;
+            this.unit = unit;
+            this.prompt = prompt;
+            this.answer = answer;
+            this.speak = speak;
+            this.options = options;
+        }
+    }
+
+    private static final Exercise[] EXERCISES = {
+            new Exercise(TYPE_CHOICE, 0, "¿Qué significa ‘Hello’?", "Hola", "Hello", "Hola", "Gracias", "Adiós"),
+            new Exercise(TYPE_LISTEN_CHOICE, 0, "Escucha y elige la traducción", "Buenos días", "Good morning", "Buenas noches", "Buenos días", "Hasta luego"),
+            new Exercise(TYPE_FILL, 0, "Completa: Thank ___", "you", "Thank you"),
+            new Exercise(TYPE_ORDER, 0, "Ordena la frase", "My name is Ana", "My name is Ana", "Ana", "is", "My", "name"),
+            new Exercise(TYPE_WRITE_LISTEN, 0, "Escribe lo que escuchas", "Goodbye", "Goodbye"),
+
+            new Exercise(TYPE_CHOICE, 1, "¿Qué significa ‘mother’?", "Madre", "mother", "Hermana", "Madre", "Hija"),
+            new Exercise(TYPE_FILL, 1, "Completa: She is my ___", "sister", "She is my sister"),
+            new Exercise(TYPE_ORDER, 1, "Ordena la frase", "I drink water", "I drink water", "water", "I", "drink"),
+            new Exercise(TYPE_LISTEN_CHOICE, 1, "Escucha y elige", "Hermano", "Brother", "Padre", "Hermano", "Primo"),
+            new Exercise(TYPE_WRITE_LISTEN, 1, "Escribe lo que escuchas", "They are friends", "They are friends"),
+
+            new Exercise(TYPE_CHOICE, 2, "Elige la forma correcta: I ___ happy", "am", "I am happy", "is", "am", "are"),
+            new Exercise(TYPE_FILL, 2, "Completa: ___ apple", "an", "an apple"),
+            new Exercise(TYPE_ORDER, 2, "Ordena la pregunta", "Where are you", "Where are you", "you", "Where", "are"),
+            new Exercise(TYPE_LISTEN_CHOICE, 2, "Escucha y elige la traducción", "Esta es mi casa", "This is my house", "Esta es mi casa", "Esa es tu casa", "Mi casa es grande"),
+            new Exercise(TYPE_WRITE_LISTEN, 2, "Escribe lo que escuchas", "He is my friend", "He is my friend"),
+
+            new Exercise(TYPE_CHOICE, 3, "¿Qué día viene después de Monday?", "Tuesday", "Tuesday", "Sunday", "Tuesday", "Friday"),
+            new Exercise(TYPE_FILL, 3, "Completa: January, February, ___", "March", "March"),
+            new Exercise(TYPE_ORDER, 3, "Ordena la frase", "It is three o'clock", "It is three o'clock", "three", "It", "o'clock", "is"),
+            new Exercise(TYPE_LISTEN_CHOICE, 3, "Escucha y elige", "Viernes", "Friday", "Viernes", "Martes", "Jueves"),
+            new Exercise(TYPE_WRITE_LISTEN, 3, "Escribe lo que escuchas", "Today is Monday", "Today is Monday"),
+
+            new Exercise(TYPE_CHOICE, 4, "¿Qué significa ‘blue’?", "Azul", "blue", "Rojo", "Azul", "Verde"),
+            new Exercise(TYPE_FILL, 4, "Completa: I eat ___", "bread", "I eat bread"),
+            new Exercise(TYPE_ORDER, 4, "Ordena la frase", "The kitchen is small", "The kitchen is small", "small", "The", "is", "kitchen"),
+            new Exercise(TYPE_LISTEN_CHOICE, 4, "Escucha y elige", "Cabeza", "Head", "Brazo", "Cabeza", "Pierna"),
+            new Exercise(TYPE_WRITE_LISTEN, 4, "Escribe lo que escuchas", "I drink coffee", "I drink coffee"),
+
+            new Exercise(TYPE_CHOICE, 5, "Completa: She ___ English every day", "studies", "She studies English every day", "study", "studies", "studying"),
+            new Exercise(TYPE_FILL, 5, "Completa: I ___ up at seven", "wake", "I wake up at seven"),
+            new Exercise(TYPE_ORDER, 5, "Ordena la frase", "I go to work", "I go to work", "work", "to", "I", "go"),
+            new Exercise(TYPE_LISTEN_CHOICE, 5, "Escucha y elige la traducción", "Él desayuna por la mañana", "He eats breakfast in the morning", "Él desayuna por la mañana", "Él trabaja de noche", "Él duerme por la tarde"),
+            new Exercise(TYPE_WRITE_LISTEN, 5, "Escribe lo que escuchas", "We study English", "We study English")
+    };
+
+    private static final String[][] LEVEL_TEST = {
+            {"¿Qué significa ‘Good night’?", "Buenos días", "Buenas noches", "Gracias", "Buenas noches"},
+            {"Elige el pronombre para ‘nosotros’", "They", "We", "He", "We"},
+            {"Completa: She ___ a teacher", "am", "is", "are", "is"},
+            {"¿Cuál es correcto?", "a apple", "an apple", "an house", "an apple"},
+            {"¿Qué significa ‘Where do you live?’", "¿Dónde vives?", "¿Cómo te llamas?", "¿Qué haces?", "¿Dónde vives?"},
+            {"Completa: I ___ coffee every morning", "drink", "drinks", "drinking", "drink"},
+            {"Elige la oración correcta", "He work every day", "He works every day", "He working every day", "He works every day"},
+            {"¿Qué significa ‘I have already eaten’?", "Ya he comido", "Estoy comiendo", "Comeré después", "Ya he comido"},
+            {"Elige la opción más natural", "I am agree", "I agree", "I agreeing", "I agree"},
+            {"¿Qué significa ‘If I had time, I would travel’?", "Si tengo tiempo, viajo", "Si tuviera tiempo, viajaría", "Cuando tenga tiempo, viajaré", "Si tuviera tiempo, viajaría"}
+    };
+
+    private static final String[][][] UNIT_EXAMS = {
+            {
+                    {"¿Qué significa ‘Hello’?", "Hola", "Gracias", "Adiós", "Hola"},
+                    {"¿Qué significa ‘Good morning’?", "Buenas tardes", "Buenos días", "Buenas noches", "Buenos días"},
+                    {"Completa: Thank ___", "me", "you", "we", "you"},
+                    {"¿Cuál es un número en inglés?", "Blue", "Seven", "Mother", "Seven"},
+                    {"¿Qué significa ‘Goodbye’?", "Hasta luego/Adiós", "Hola", "Por favor", "Hasta luego/Adiós"}
+            },
+            {
+                    {"¿Qué significa ‘father’?", "Padre", "Hermano", "Tío", "Padre"},
+                    {"Pronombre para ‘ella’", "He", "She", "We", "She"},
+                    {"¿Qué significa ‘drink’?", "Beber", "Dormir", "Correr", "Beber"},
+                    {"Completa: ___ are friends", "They", "He", "She", "They"},
+                    {"¿Qué significa ‘family’?", "Familia", "Trabajo", "Casa", "Familia"}
+            },
+            {
+                    {"Completa: I ___ happy", "is", "am", "are", "am"},
+                    {"Artículo correcto: ___ orange", "a", "an", "the siempre", "an"},
+                    {"Posesivo de ‘yo’", "my", "his", "their", "my"},
+                    {"¿Qué palabra pregunta ‘dónde’?", "When", "Where", "Who", "Where"},
+                    {"Completa: He ___ my brother", "am", "is", "are", "is"}
+            },
+            {
+                    {"Después de Monday viene…", "Friday", "Tuesday", "Sunday", "Tuesday"},
+                    {"Mes después de March", "April", "June", "January", "April"},
+                    {"¿Qué significa ‘What time is it?’", "¿Qué día es?", "¿Qué hora es?", "¿Dónde estás?", "¿Qué hora es?"},
+                    {"‘Friday’ significa…", "Viernes", "Martes", "Sábado", "Viernes"},
+                    {"‘January’ significa…", "Enero", "Junio", "Julio", "Enero"}
+            },
+            {
+                    {"‘Blue’ significa…", "Azul", "Rojo", "Negro", "Azul"},
+                    {"‘Head’ significa…", "Mano", "Cabeza", "Pie", "Cabeza"},
+                    {"‘Bread’ significa…", "Pan", "Agua", "Leche", "Pan"},
+                    {"‘Kitchen’ significa…", "Baño", "Cocina", "Dormitorio", "Cocina"},
+                    {"Completa: I drink ___", "water", "house", "blue", "water"}
+            },
+            {
+                    {"Completa: She ___ English", "study", "studies", "studying", "studies"},
+                    {"Completa: I ___ up at seven", "wake", "wakes", "waking", "wake"},
+                    {"‘Every day’ significa…", "Cada día", "Ayer", "Nunca", "Cada día"},
+                    {"Completa: He ___ breakfast", "eat", "eats", "eating", "eats"},
+                    {"‘I go to work’ significa…", "Voy al trabajo", "Estoy en casa", "Voy a dormir", "Voy al trabajo"}
+            }
     };
 
     private static final String[][] QUIZ = {
@@ -296,10 +432,10 @@ public class MainActivity extends Activity {
         if ("Avanzado".equals(selectedLevel)) startIndex = 14;
         else if ("Intermedio".equals(selectedLevel)) startIndex = 8;
         else startIndex = 0;
-        if ("Ya sé un poco".equals(selectedStartMode)) startIndex = Math.min(16, startIndex + 2);
 
+        boolean needsTest = "Ya sé un poco".equals(selectedStartMode);
         prefs.edit()
-                .putBoolean(KEY_ONBOARDED, true)
+                .putBoolean(KEY_ONBOARDED, !needsTest)
                 .putString(KEY_START_MODE, selectedStartMode)
                 .putString(KEY_LEVEL, selectedLevel)
                 .putString(KEY_GOAL, selectedGoal)
@@ -308,9 +444,13 @@ public class MainActivity extends Activity {
                 .putBoolean(KEY_REMINDER, true)
                 .apply();
 
-        launchApp();
-        Toast.makeText(this, "Tu ruta personalizada está lista", Toast.LENGTH_LONG).show();
-        if ("Quiero practicar".equals(selectedStartMode)) showPracticeHub();
+        if (needsTest) {
+            showLevelTest(0, 0);
+        } else {
+            launchApp();
+            Toast.makeText(this, "Tu ruta personalizada está lista", Toast.LENGTH_LONG).show();
+            if ("Quiero practicar".equals(selectedStartMode)) showPracticeHub();
+        }
     }
 
     private void buildShell() {
@@ -415,7 +555,7 @@ public class MainActivity extends Activity {
         LinearLayout welcome = card();
         welcome.setBackground(rounded(Color.rgb(234, 246, 255), Color.rgb(203, 227, 246), 22));
         welcome.addView(label("TU RUTA PERSONALIZADA", BLUE));
-        welcome.addView(heading("Sigue avanzando paso a paso", 24, BLUE_DARK));
+        welcome.addView(heading("Aprende paso a paso", 24, BLUE_DARK));
         String goal = prefs.getString(KEY_GOAL, "Hablar inglés");
         int mins = prefs.getInt(KEY_DAILY_MINUTES, 10);
         welcome.addView(body("Objetivo: " + goal + " · Meta diaria: " + mins + " min"));
@@ -428,36 +568,48 @@ public class MainActivity extends Activity {
         box.addView(welcome);
 
         box.addView(dailyGoalCard());
-        box.addView(spacer(12));
-
-        TextView unit = heading("Unidad 1 · Inglés desde cero", 22, BLUE_DARK);
-        unit.setGravity(Gravity.CENTER);
-        box.addView(unit);
-        TextView unitSub = body("Completa una lección para desbloquear la siguiente.");
-        unitSub.setGravity(Gravity.CENTER);
-        box.addView(unitSub);
+        box.addView(spacer(8));
 
         List<PostItem> ordered = getOrderedPosts();
         if (ordered.isEmpty()) {
             box.addView(cardMessage("Cargando tu ruta…", "Estamos sincronizando las lecciones publicadas en tu web."));
-        } else {
-            int startIndex = Math.min(prefs.getInt(KEY_START_INDEX, 0), Math.max(0, ordered.size() - 1));
-            int current = findCurrentIndex(ordered, startIndex);
-            Set<String> done = completedSet();
+            setContent(scroll);
+            return;
+        }
 
-            for (int i = 0; i < ordered.size(); i++) {
-                PostItem p = ordered.get(i);
-                boolean placementPassed = i < startIndex;
-                boolean completed = done.contains(p.url);
-                boolean isCurrent = i == current;
-                boolean locked = i > current;
-                box.addView(pathNode(p, i, completed, placementPassed, isCurrent, locked));
-                if (i < ordered.size() - 1) box.addView(pathConnector(i, current));
+        int startIndex = Math.min(prefs.getInt(KEY_START_INDEX, 0), Math.max(0, ordered.size() - 1));
+        int current = findCurrentPathIndex(ordered, startIndex);
+        Set<String> done = completedSet();
+
+        for (int unit = 0; unit < UNIT_NAMES.length; unit++) {
+            boolean unitUnlocked = isUnitUnlocked(unit, startIndex);
+            boolean placementPassed = UNIT_END[unit] < startIndex;
+
+            LinearLayout banner = card();
+            banner.setBackground(rounded(unitUnlocked ? Color.rgb(240, 248, 255) : Color.rgb(244, 246, 248), BORDER, 18));
+            banner.addView(label("UNIDAD " + (unit + 1), unitUnlocked ? BLUE : MUTED));
+            banner.addView(heading((unitUnlocked ? "" : "🔒 ") + UNIT_NAMES[unit], 21, unitUnlocked ? BLUE_DARK : MUTED));
+            banner.addView(body(unitDescription(unit)));
+            box.addView(banner);
+
+            int from = UNIT_START[unit];
+            int to = Math.min(UNIT_END[unit], ordered.size() - 1);
+            for (int i = from; i <= to; i++) {
+                PostItem post = ordered.get(i);
+                boolean skippedByPlacement = i < startIndex;
+                boolean completed = done.contains(post.url);
+                boolean isCurrent = unitUnlocked && i == current;
+                boolean locked = !unitUnlocked || (!completed && !skippedByPlacement && i != current);
+                box.addView(pathNode(post, i, completed, skippedByPlacement, isCurrent, locked));
+                if (i < to) box.addView(pathConnector(i, current));
             }
 
-            if (done.size() >= ordered.size()) {
-                box.addView(cardMessage("🏆 Ruta completada", "Has terminado todas las lecciones disponibles. Las nuevas publicaciones se añadirán automáticamente."));
-            }
+            box.addView(unitExamCard(unit, ordered, startIndex, done, placementPassed));
+            box.addView(spacer(12));
+        }
+
+        if (done.size() >= ordered.size() && allRequiredExamsPassed(startIndex)) {
+            box.addView(cardMessage("🏆 Ruta completada", "Terminaste las lecciones y los exámenes disponibles. Las nuevas publicaciones se añadirán automáticamente."));
         }
 
         setContent(scroll);
@@ -561,22 +713,28 @@ public class MainActivity extends Activity {
         scroll.addView(box);
 
         box.addView(heading("Practicar", 27, BLUE_DARK));
-        box.addView(body("Refuerza lo aprendido con sesiones cortas. Tus errores quedan guardados para repasarlos después."));
+        box.addView(body("Sesiones cortas que mezclan traducción, ordenar frases, completar, escuchar y escribir. La app prioriza tus errores frecuentes."));
 
-        LinearLayout quick = card();
-        quick.addView(label("PRÁCTICA RÁPIDA", BLUE));
-        quick.addView(heading("10 preguntas", 21, BLUE_DARK));
-        quick.addView(body("Gana 10 XP por cada respuesta correcta. Una respuesta incorrecta consume un corazón."));
-        quick.addView(primaryButton("🧠 Empezar", () -> showQuiz(false)));
-        box.addView(quick);
+        LinearLayout smart = card();
+        smart.addView(label("SESIÓN INTELIGENTE", BLUE));
+        smart.addView(heading("Práctica personalizada", 21, BLUE_DARK));
+        smart.addView(body("10 ejercicios adaptados a tu unidad actual y a los conceptos que más te cuestan."));
+        smart.addView(primaryButton("🧠 Empezar sesión", () -> showQuiz(false)));
+        box.addView(smart);
 
         LinearLayout mistakes = card();
         int errors = errorSet().size();
         mistakes.addView(label("REPASO INTELIGENTE", RED));
         mistakes.addView(heading("Repasar mis errores", 21, BLUE_DARK));
-        mistakes.addView(body(errors == 0 ? "No tienes errores pendientes. Sospechosamente competente." : "Tienes " + errors + " concepto(s) pendientes de repaso."));
+        mistakes.addView(body(errors == 0 ? "No tienes errores pendientes." : "Tienes " + errors + " concepto(s) pendientes. Primero aparecerán los que más has fallado."));
         mistakes.addView(secondaryButton(errors == 0 ? "✓ Todo al día" : "↻ Repasar ahora", () -> showQuiz(true)));
         box.addView(mistakes);
+
+        LinearLayout formats = card();
+        formats.addView(label("5 FORMATOS", GREEN));
+        formats.addView(heading("Aprende haciendo", 21, BLUE_DARK));
+        formats.addView(body("✓ Elegir traducción\n✓ Ordenar palabras\n✓ Completar frases\n✓ Escuchar y elegir\n✓ Escribir lo que escuchas"));
+        box.addView(formats);
 
         LinearLayout pronunciation = card();
         pronunciation.addView(label("PRONUNCIACIÓN", GREEN));
@@ -585,100 +743,542 @@ public class MainActivity extends Activity {
         pronunciation.addView(primaryButton("🗣️ Abrir pronunciación", () -> openUrl(HOME + "p/pronunciacion-facil.html")));
         box.addView(pronunciation);
 
-        LinearLayout browse = card();
-        browse.addView(label("BIBLIOTECA", PURPLE));
-        browse.addView(heading("Buscar una lección", 21, BLUE_DARK));
-        browse.addView(body("Encuentra verbos, familia, colores, To Be y cualquier nueva lección publicada."));
-        browse.addView(secondaryButton("🔎 Buscar", this::showAllLessons));
-        box.addView(browse);
-
         setContent(scroll);
     }
 
     private void showQuiz(boolean reviewOnly) {
-        Set<String> savedErrors = errorSet();
-        List<Integer> indexes = new ArrayList<>();
-        if (reviewOnly) {
-            for (String s : savedErrors) {
-                try {
-                    int idx = Integer.parseInt(s);
-                    if (idx >= 0 && idx < QUIZ.length) indexes.add(idx);
-                } catch (Exception ignored) {}
-            }
-            Collections.sort(indexes);
-        } else {
-            for (int i = 0; i < QUIZ.length; i++) indexes.add(i);
+        List<Integer> session = buildPracticeSession(reviewOnly);
+        if (session.isEmpty()) {
+            ScrollView scroll = new ScrollView(this);
+            LinearLayout box = verticalBox();
+            box.setPadding(dp(14), dp(14), dp(14), dp(28));
+            box.addView(cardMessage("✓ Sin errores pendientes", "Tu repaso está al día. Puedes iniciar una sesión inteligente para seguir avanzando."));
+            box.addView(primaryButton("Empezar práctica", () -> showQuiz(false)));
+            scroll.addView(box);
+            setContent(scroll);
+            return;
+        }
+        renderPracticeQuestion(session, 0, 0, reviewOnly, System.currentTimeMillis());
+    }
+
+    private void showLevelTest(int position, int score) {
+        if (position >= LEVEL_TEST.length) {
+            showLevelTestResult(score);
+            return;
         }
 
+        LinearLayout root = verticalBox();
+        root.setBackgroundColor(Color.WHITE);
+        root.setPadding(dp(22), dp(22), dp(22), dp(22));
+
+        TextView progressText = label("PRUEBA DE NIVEL · " + (position + 1) + "/" + LEVEL_TEST.length, BLUE);
+        progressText.setGravity(Gravity.CENTER);
+        root.addView(progressText);
+        ProgressBar progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        progress.setMax(LEVEL_TEST.length);
+        progress.setProgress(position + 1);
+        progress.setProgressTintList(android.content.res.ColorStateList.valueOf(GREEN));
+        root.addView(progress, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(8)));
+        root.addView(spacer(24));
+
+        ImageView logo = new ImageView(this);
+        logo.setImageResource(R.mipmap.ic_launcher);
+        logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        LinearLayout.LayoutParams logoLp = new LinearLayout.LayoutParams(dp(82), dp(82));
+        logoLp.gravity = Gravity.CENTER_HORIZONTAL;
+        root.addView(logo, logoLp);
+        root.addView(spacer(14));
+
+        String[] q = LEVEL_TEST[position];
+        TextView h = heading(q[0], 24, BLUE_DARK);
+        h.setGravity(Gravity.CENTER);
+        root.addView(h);
+        root.addView(body("Elige una respuesta. La prueba ajustará automáticamente el punto de inicio de tu ruta."));
+
+        for (int i = 1; i <= 3; i++) {
+            final String option = q[i];
+            root.addView(optionButton(option, false, () -> showLevelTest(position + 1, score + (option.equals(q[4]) ? 1 : 0))));
+        }
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(root);
+        setContentView(scroll);
+    }
+
+    private void showLevelTestResult(int score) {
+        String level;
+        int startIndex;
+        if (score >= 8) {
+            level = "Avanzado";
+            startIndex = 14;
+        } else if (score >= 4) {
+            level = "Intermedio";
+            startIndex = 7;
+        } else {
+            level = "Básico";
+            startIndex = 0;
+        }
+
+        prefs.edit()
+                .putBoolean(KEY_ONBOARDED, true)
+                .putString(KEY_LEVEL, level)
+                .putInt(KEY_START_INDEX, startIndex)
+                .putInt(KEY_LEVEL_TEST_SCORE, score)
+                .apply();
+
+        LinearLayout root = verticalBox();
+        root.setBackgroundColor(Color.WHITE);
+        root.setPadding(dp(24), dp(28), dp(24), dp(28));
+        ImageView logo = new ImageView(this);
+        logo.setImageResource(R.mipmap.ic_launcher);
+        logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(110), dp(110));
+        lp.gravity = Gravity.CENTER_HORIZONTAL;
+        root.addView(logo, lp);
+        root.addView(spacer(18));
+        TextView h = heading("Tu nivel estimado: " + level, 27, BLUE_DARK);
+        h.setGravity(Gravity.CENTER);
+        root.addView(h);
+        TextView sc = heading(score + " / " + LEVEL_TEST.length, 36, GREEN_DARK);
+        sc.setGravity(Gravity.CENTER);
+        root.addView(sc);
+        TextView desc = body(levelTestDescription(level));
+        desc.setGravity(Gravity.CENTER);
+        root.addView(desc);
+        root.addView(spacer(14));
+        root.addView(primaryButton("Empezar mi ruta", () -> {
+            shellBuilt = false;
+            launchApp();
+            Toast.makeText(this, "Ruta ajustada según tu prueba", Toast.LENGTH_LONG).show();
+        }));
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(root);
+        setContentView(scroll);
+    }
+
+    private String levelTestDescription(String level) {
+        if ("Avanzado".equals(level)) return "Tienes una base sólida dentro del contenido disponible. Empezarás cerca de las unidades finales y podrás repasar lo anterior cuando quieras.";
+        if ("Intermedio".equals(level)) return "Ya manejas conceptos básicos. La app te colocará en gramática esencial y mantendrá disponible el repaso de fundamentos.";
+        return "Conviene empezar por los fundamentos para construir una base estable y avanzar sin huecos.";
+    }
+
+    private void restartLevelTest() {
+        shellBuilt = false;
+        showLevelTest(0, 0);
+    }
+
+    private String unitDescription(int unit) {
+        switch (unit) {
+            case 0: return "Saludos, pronunciación TH y números.";
+            case 1: return "Familia, frases cotidianas, verbos y pronombres.";
+            case 2: return "To Be, artículos, posesivos y preguntas.";
+            case 3: return "Días, meses, fechas y hora.";
+            case 4: return "Colores, cuerpo, comida y casa.";
+            default: return "Presente simple y rutina diaria.";
+        }
+    }
+
+    private int unitForLesson(int lessonIndex) {
+        for (int i = 0; i < UNIT_START.length; i++) {
+            if (lessonIndex >= UNIT_START[i] && lessonIndex <= UNIT_END[i]) return i;
+        }
+        return UNIT_NAMES.length - 1;
+    }
+
+    private Set<String> examPassedSet() {
+        return new HashSet<>(prefs.getStringSet(KEY_EXAMS, Collections.emptySet()));
+    }
+
+    private Set<String> masteredSet() {
+        return new HashSet<>(prefs.getStringSet(KEY_MASTERED, Collections.emptySet()));
+    }
+
+    private boolean isUnitUnlocked(int unit, int startIndex) {
+        if (unit <= 0) return true;
+        if (UNIT_END[unit - 1] < startIndex) return true;
+        return examPassedSet().contains(String.valueOf(unit - 1));
+    }
+
+    private boolean allRequiredExamsPassed(int startIndex) {
+        Set<String> passed = examPassedSet();
+        for (int unit = 0; unit < UNIT_NAMES.length; unit++) {
+            if (UNIT_END[unit] < startIndex) continue;
+            if (!passed.contains(String.valueOf(unit))) return false;
+        }
+        return true;
+    }
+
+    private int findCurrentPathIndex(List<PostItem> ordered, int startIndex) {
+        Set<String> done = completedSet();
+        for (int i = Math.max(0, startIndex); i < ordered.size(); i++) {
+            int unit = unitForLesson(i);
+            if (!isUnitUnlocked(unit, startIndex)) return -1;
+            if (!done.contains(ordered.get(i).url)) return i;
+            if (i == Math.min(UNIT_END[unit], ordered.size() - 1) && !examPassedSet().contains(String.valueOf(unit))) return -1;
+        }
+        return -1;
+    }
+
+    private View unitExamCard(int unit, List<PostItem> ordered, int startIndex, Set<String> done, boolean placementPassed) {
+        LinearLayout c = card();
+        boolean passed = placementPassed || examPassedSet().contains(String.valueOf(unit));
+        boolean unlocked = isUnitUnlocked(unit, startIndex);
+        boolean ready = unlocked;
+        int from = UNIT_START[unit];
+        int to = Math.min(UNIT_END[unit], ordered.size() - 1);
+        if (from >= ordered.size()) ready = false;
+        for (int i = from; i <= to && ready; i++) {
+            if (i < startIndex) continue;
+            if (!done.contains(ordered.get(i).url)) ready = false;
+        }
+
+        c.addView(label("EXAMEN DE UNIDAD", passed ? GREEN : ORANGE));
+        if (passed) {
+            c.addView(heading(placementPassed ? "✓ Aprobado por prueba de nivel" : "✓ Examen aprobado", 19, GREEN_DARK));
+            c.addView(body("La siguiente unidad está desbloqueada."));
+        } else if (ready) {
+            c.addView(heading("Demuestra lo aprendido", 19, BLUE_DARK));
+            c.addView(body("5 preguntas · necesitas 4 correctas (80 %) para desbloquear la siguiente unidad."));
+            c.addView(primaryButton("🎓 Hacer examen", () -> showUnitExam(unit)));
+        } else {
+            c.addView(heading("🔒 Examen bloqueado", 19, MUTED));
+            c.addView(body("Completa las lecciones de esta unidad para habilitarlo."));
+        }
+        return c;
+    }
+
+    private void showUnitExam(int unit) {
+        currentSection = "practice";
         ScrollView scroll = new ScrollView(this);
         LinearLayout box = verticalBox();
         box.setPadding(dp(14), dp(14), dp(14), dp(28));
         scroll.addView(box);
 
-        box.addView(heading(reviewOnly ? "Repasar errores" : "Práctica rápida", 26, BLUE_DARK));
-        TextView score = body("⭐ +10 XP por acierto · ❤️ " + prefs.getInt(KEY_LIVES, 5) + " corazones");
-        box.addView(score);
+        box.addView(label("UNIDAD " + (unit + 1), BLUE));
+        box.addView(heading("Examen · " + UNIT_NAMES[unit], 25, BLUE_DARK));
+        box.addView(body("Necesitas 4 de 5 respuestas correctas para aprobar."));
 
-        if (indexes.isEmpty()) {
-            box.addView(cardMessage("✓ Sin errores pendientes", "Completa otra práctica y aquí aparecerán los conceptos que necesiten refuerzo."));
-            box.addView(primaryButton("Volver a practicar", () -> showQuiz(false)));
-            setContent(scroll);
-            return;
-        }
-
-        final int total = indexes.size();
-        final int[] correct = {0};
+        String[][] questions = UNIT_EXAMS[unit];
         final int[] answered = {0};
+        final int[] correct = {0};
+        final boolean[] finished = {false};
+        final long startedAt = System.currentTimeMillis();
+        LinearLayout resultHost = verticalBox();
 
-        for (int display = 0; display < indexes.size(); display++) {
-            int questionIndex = indexes.get(display);
-            String[] q = QUIZ[questionIndex];
+        for (int qIndex = 0; qIndex < questions.length; qIndex++) {
+            String[] q = questions[qIndex];
             LinearLayout c = card();
-            c.setTag(questionIndex);
-            c.addView(label("PREGUNTA " + (display + 1) + " DE " + total, BLUE));
+            c.addView(label("PREGUNTA " + (qIndex + 1) + " DE " + questions.length, BLUE));
             c.addView(heading(q[0], 18, TEXT));
-
+            LinearLayout optionsHost = verticalBox();
             for (int a = 1; a <= 3; a++) {
-                String option = q[a];
+                final String option = q[a];
                 Button b = secondaryButton(option, () -> {});
                 b.setOnClickListener(v -> {
-                    if (!v.isEnabled()) return;
-                    ViewGroup parent = (ViewGroup) v.getParent();
-                    for (int k = 0; k < parent.getChildCount(); k++) {
-                        View child = parent.getChildAt(k);
-                        if (child instanceof Button) child.setEnabled(false);
-                    }
-
+                    if (!v.isEnabled() || finished[0]) return;
+                    for (int k = 0; k < optionsHost.getChildCount(); k++) optionsHost.getChildAt(k).setEnabled(false);
+                    boolean ok = option.equals(q[4]);
                     answered[0]++;
-                    Set<String> errs = errorSet();
-                    if (option.equals(q[4])) {
+                    if (ok) {
                         correct[0]++;
                         ((Button) v).setText("✓ " + option);
                         ((Button) v).setTextColor(GREEN_DARK);
-                        errs.remove(String.valueOf(questionIndex));
-                        saveErrors(errs);
-                        awardXp(10);
+                        awardXp(15);
                     } else {
-                        ((Button) v).setText("✗ " + option);
+                        ((Button) v).setText("✗ " + option + " · Correcta: " + q[4]);
                         ((Button) v).setTextColor(RED);
-                        errs.add(String.valueOf(questionIndex));
-                        saveErrors(errs);
                         loseHeart();
                     }
+                    recordGenericAnswer(ok);
 
-                    score.setText("Puntuación: " + correct[0] + " / " + answered[0] + "   ·   ❤️ " + prefs.getInt(KEY_LIVES, 5));
-                    if (answered[0] == total) {
+                    if (answered[0] == questions.length) {
+                        finished[0] = true;
+                        addStudySession(startedAt);
                         recordStudyActivity();
-                        if (correct[0] == total) awardXp(20);
-                        Toast.makeText(this, "Sesión terminada: " + correct[0] + "/" + total, Toast.LENGTH_LONG).show();
+                        boolean pass = correct[0] >= 4;
+                        if (pass) {
+                            Set<String> exams = examPassedSet();
+                            boolean firstPass = exams.add(String.valueOf(unit));
+                            prefs.edit().putStringSet(KEY_EXAMS, new HashSet<>(exams)).apply();
+                            if (firstPass) awardXp(100);
+                        }
+                        LinearLayout result = card();
+                        result.setBackground(rounded(pass ? Color.rgb(235, 250, 240) : Color.rgb(255, 244, 244), pass ? Color.rgb(185, 230, 197) : Color.rgb(244, 198, 198), 20));
+                        result.addView(heading(pass ? "🎉 Examen aprobado" : "Aún no", 22, pass ? GREEN_DARK : RED));
+                        result.addView(body("Resultado: " + correct[0] + "/" + questions.length + (pass ? " · +100 XP de aprobación" : " · necesitas 4/5")));
+                        result.addView(primaryButton(pass ? "Continuar ruta" : "Reintentar", pass ? this::showPath : () -> showUnitExam(unit)));
+                        resultHost.addView(result);
                     }
                 });
-                c.addView(b);
+                optionsHost.addView(b);
             }
+            c.addView(optionsHost);
             box.addView(c);
         }
-
+        box.addView(resultHost);
         setContent(scroll);
+    }
+
+    private List<Integer> buildPracticeSession(boolean reviewOnly) {
+        List<Integer> session = new ArrayList<>();
+        List<Integer> weak = new ArrayList<>();
+        for (String s : errorSet()) {
+            try {
+                int idx = Integer.parseInt(s);
+                if (idx >= 0 && idx < EXERCISES.length) weak.add(idx);
+            } catch (Exception ignored) {}
+        }
+        Collections.sort(weak, (a, b) -> Integer.compare(weakCount(b), weakCount(a)));
+
+        if (reviewOnly) {
+            for (int idx : weak) {
+                if (session.size() >= 10) break;
+                session.add(idx);
+            }
+            return session;
+        }
+
+        for (int idx : weak) {
+            if (session.size() >= 3) break;
+            session.add(idx);
+        }
+
+        int unit = currentLearningUnit();
+        for (int i = 0; i < EXERCISES.length && session.size() < 10; i++) {
+            if (EXERCISES[i].unit == unit && !session.contains(i)) session.add(i);
+        }
+        for (int i = 0; i < EXERCISES.length && session.size() < 10; i++) {
+            if (!session.contains(i)) session.add(i);
+        }
+        return session;
+    }
+
+    private int currentLearningUnit() {
+        List<PostItem> ordered = getOrderedPosts();
+        int startIndex = prefs.getInt(KEY_START_INDEX, 0);
+        int current = ordered.isEmpty() ? startIndex : findCurrentPathIndex(ordered, Math.min(startIndex, Math.max(0, ordered.size() - 1)));
+        if (current < 0) {
+            for (int u = 0; u < UNIT_NAMES.length; u++) {
+                if (isUnitUnlocked(u, startIndex) && !examPassedSet().contains(String.valueOf(u))) return u;
+            }
+            return unitForLesson(startIndex);
+        }
+        return unitForLesson(current);
+    }
+
+    private void renderPracticeQuestion(List<Integer> session, int position, int score, boolean reviewOnly, long startedAt) {
+        if (position >= session.size()) {
+            showPracticeResult(score, session.size(), reviewOnly, startedAt);
+            return;
+        }
+
+        currentSection = "practice";
+        int exerciseIndex = session.get(position);
+        Exercise ex = EXERCISES[exerciseIndex];
+        LinearLayout root = verticalBox();
+        root.setPadding(dp(16), dp(14), dp(16), dp(22));
+        root.setBackgroundColor(BG);
+
+        LinearLayout top = horizontal();
+        top.addView(smallButton("✕", this::showPracticeHub), new LinearLayout.LayoutParams(dp(50), dp(44)));
+        ProgressBar progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        progress.setMax(session.size());
+        progress.setProgress(position);
+        progress.setProgressTintList(android.content.res.ColorStateList.valueOf(GREEN));
+        LinearLayout.LayoutParams pLp = new LinearLayout.LayoutParams(0, dp(10), 1f);
+        pLp.setMargins(dp(10), 0, dp(10), 0);
+        top.addView(progress, pLp);
+        TextView hearts = label("❤️ " + prefs.getInt(KEY_LIVES, 5), RED);
+        hearts.setGravity(Gravity.CENTER);
+        top.addView(hearts, new LinearLayout.LayoutParams(dp(60), dp(44)));
+        root.addView(top);
+        root.addView(spacer(18));
+
+        root.addView(label(exerciseTypeLabel(ex.type) + " · UNIDAD " + (ex.unit + 1), BLUE));
+        root.addView(heading(ex.prompt, 25, BLUE_DARK));
+        root.addView(body("Ejercicio " + (position + 1) + " de " + session.size() + " · Puntuación: " + score));
+        root.addView(spacer(8));
+
+        if (ex.type == TYPE_CHOICE || ex.type == TYPE_LISTEN_CHOICE) {
+            if (ex.type == TYPE_LISTEN_CHOICE) root.addView(primaryButton("🔊 Escuchar", () -> speakNative(ex.speak)));
+            for (String option : ex.options) {
+                root.addView(optionButton(option, false, () -> answerPractice(session, position, score, reviewOnly, startedAt, exerciseIndex, option.equals(ex.answer))));
+            }
+        } else if (ex.type == TYPE_FILL || ex.type == TYPE_WRITE_LISTEN) {
+            if (ex.type == TYPE_WRITE_LISTEN) root.addView(primaryButton("🔊 Escuchar", () -> speakNative(ex.speak)));
+            EditText input = new EditText(this);
+            input.setSingleLine(false);
+            input.setHint(ex.type == TYPE_FILL ? "Escribe la palabra que falta" : "Escribe la frase que escuchas");
+            input.setTextSize(18);
+            input.setPadding(dp(14), dp(12), dp(14), dp(12));
+            input.setBackground(rounded(Color.WHITE, BORDER, 16));
+            root.addView(input, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(64)));
+            root.addView(spacer(10));
+            root.addView(primaryButton("COMPROBAR", () -> {
+                String given = input.getText().toString();
+                if (given.trim().isEmpty()) {
+                    Toast.makeText(this, "Escribe una respuesta primero", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                answerPractice(session, position, score, reviewOnly, startedAt, exerciseIndex, normalizeAnswer(given).equals(normalizeAnswer(ex.answer)));
+            }));
+        } else if (ex.type == TYPE_ORDER) {
+            TextView assembled = heading("", 21, TEXT);
+            assembled.setMinHeight(dp(58));
+            assembled.setGravity(Gravity.CENTER_VERTICAL);
+            assembled.setBackground(rounded(Color.WHITE, BORDER, 16));
+            assembled.setPadding(dp(14), dp(10), dp(14), dp(10));
+            root.addView(assembled);
+            root.addView(spacer(10));
+            LinearLayout tokens = verticalBox();
+            List<String> selected = new ArrayList<>();
+            List<Button> tokenButtons = new ArrayList<>();
+            for (String token : ex.options) {
+                Button b = secondaryButton(token, () -> {});
+                b.setOnClickListener(v -> {
+                    selected.add(token);
+                    assembled.setText(joinLabels(selected, " "));
+                    v.setEnabled(false);
+                });
+                tokenButtons.add(b);
+                tokens.addView(b);
+            }
+            root.addView(tokens);
+            LinearLayout actions = horizontal();
+            Button reset = secondaryButton("↺ Reiniciar", () -> {
+                selected.clear();
+                assembled.setText("");
+                for (Button b : tokenButtons) b.setEnabled(true);
+            });
+            actions.addView(reset, new LinearLayout.LayoutParams(0, dp(50), 1f));
+            LinearLayout.LayoutParams checkLp = new LinearLayout.LayoutParams(0, dp(50), 1f);
+            checkLp.setMargins(dp(8), 0, 0, 0);
+            actions.addView(primaryButton("COMPROBAR", () -> {
+                if (selected.isEmpty()) {
+                    Toast.makeText(this, "Ordena las palabras primero", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                answerPractice(session, position, score, reviewOnly, startedAt, exerciseIndex, normalizeAnswer(joinLabels(selected, " ")).equals(normalizeAnswer(ex.answer)));
+            }), checkLp);
+            root.addView(spacer(10));
+            root.addView(actions);
+        }
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(root);
+        setContent(scroll);
+    }
+
+    private void answerPractice(List<Integer> session, int position, int score, boolean reviewOnly, long startedAt, int exerciseIndex, boolean correct) {
+        Exercise ex = EXERCISES[exerciseIndex];
+        recordExerciseResult(exerciseIndex, correct);
+        if (correct) Toast.makeText(this, "✓ Correcto · +10 XP", Toast.LENGTH_SHORT).show();
+        else Toast.makeText(this, "✗ Correcta: " + ex.answer, Toast.LENGTH_LONG).show();
+        renderPracticeQuestion(session, position + 1, score + (correct ? 1 : 0), reviewOnly, startedAt);
+    }
+
+    private void showPracticeResult(int score, int total, boolean reviewOnly, long startedAt) {
+        addStudySession(startedAt);
+        recordStudyActivity();
+        if (total > 0 && score == total) awardXp(20);
+        int pct = total == 0 ? 0 : Math.round(score * 100f / total);
+
+        ScrollView scroll = new ScrollView(this);
+        LinearLayout box = verticalBox();
+        box.setPadding(dp(18), dp(20), dp(18), dp(28));
+        scroll.addView(box);
+        TextView icon = heading(pct >= 80 ? "🎉" : "💪", 48, BLUE_DARK);
+        icon.setGravity(Gravity.CENTER);
+        box.addView(icon);
+        TextView title = heading(reviewOnly ? "Repaso terminado" : "Sesión completada", 27, BLUE_DARK);
+        title.setGravity(Gravity.CENTER);
+        box.addView(title);
+        TextView result = heading(score + "/" + total + " · " + pct + "%", 31, pct >= 80 ? GREEN_DARK : ORANGE);
+        result.setGravity(Gravity.CENTER);
+        box.addView(result);
+        TextView desc = body(pct >= 80 ? "Buen resultado. Los conceptos acertados reducen su prioridad de repaso." : "Los errores quedaron guardados y aparecerán con mayor frecuencia en próximas sesiones.");
+        desc.setGravity(Gravity.CENTER);
+        box.addView(desc);
+        box.addView(primaryButton("Continuar ruta", this::showPath));
+        box.addView(secondaryButton("Otra sesión", () -> showQuiz(false)));
+        setContent(scroll);
+    }
+
+    private void recordExerciseResult(int exerciseIndex, boolean correct) {
+        Set<String> errors = errorSet();
+        Set<String> mastered = masteredSet();
+        int weak = weakCount(exerciseIndex);
+        SharedPreferences.Editor e = prefs.edit();
+        e.putInt(KEY_TOTAL_ANSWERED, prefs.getInt(KEY_TOTAL_ANSWERED, 0) + 1);
+        if (correct) {
+            e.putInt(KEY_TOTAL_CORRECT, prefs.getInt(KEY_TOTAL_CORRECT, 0) + 1);
+            weak = Math.max(0, weak - 1);
+            if (weak == 0) errors.remove(String.valueOf(exerciseIndex));
+            mastered.add(String.valueOf(exerciseIndex));
+        } else {
+            weak++;
+            errors.add(String.valueOf(exerciseIndex));
+        }
+        e.putInt(WEAK_PREFIX + exerciseIndex, weak);
+        e.putStringSet(KEY_ERRORS, new HashSet<>(errors));
+        e.putStringSet(KEY_MASTERED, new HashSet<>(mastered));
+        e.apply();
+        if (correct) awardXp(10); else loseHeart();
+    }
+
+    private void recordGenericAnswer(boolean correct) {
+        SharedPreferences.Editor e = prefs.edit();
+        e.putInt(KEY_TOTAL_ANSWERED, prefs.getInt(KEY_TOTAL_ANSWERED, 0) + 1);
+        if (correct) e.putInt(KEY_TOTAL_CORRECT, prefs.getInt(KEY_TOTAL_CORRECT, 0) + 1);
+        e.apply();
+    }
+
+    private int weakCount(int exerciseIndex) {
+        return prefs.getInt(WEAK_PREFIX + exerciseIndex, 0);
+    }
+
+    private void addStudySession(long startedAt) {
+        long elapsed = Math.max(0, System.currentTimeMillis() - startedAt);
+        int minutes = Math.max(1, (int) Math.ceil(elapsed / 60000.0));
+        prefs.edit()
+                .putInt(KEY_STUDY_MINUTES, prefs.getInt(KEY_STUDY_MINUTES, 0) + minutes)
+                .putInt(KEY_STUDY_SESSIONS, prefs.getInt(KEY_STUDY_SESSIONS, 0) + 1)
+                .apply();
+    }
+
+    private String normalizeAnswer(String value) {
+        if (value == null) return "";
+        String n = Normalizer.normalize(value, Normalizer.Form.NFD).replaceAll("\\p{M}+", "");
+        return n.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9 ]", " ").replaceAll("\\s+", " ").trim();
+    }
+
+    private String exerciseTypeLabel(int type) {
+        if (type == TYPE_ORDER) return "ORDENA LA FRASE";
+        if (type == TYPE_FILL) return "COMPLETA";
+        if (type == TYPE_LISTEN_CHOICE) return "ESCUCHA Y ELIGE";
+        if (type == TYPE_WRITE_LISTEN) return "ESCUCHA Y ESCRIBE";
+        return "ELIGE LA RESPUESTA";
+    }
+
+    private void speakNative(String text) {
+        if (text == null || text.trim().isEmpty()) return;
+        if (!ttsReady || textToSpeech == null) {
+            Toast.makeText(this, "El audio todavía se está preparando", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        textToSpeech.setLanguage(Locale.US);
+        textToSpeech.setSpeechRate(0.85f);
+        textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, "practice_" + System.currentTimeMillis());
+    }
+
+    private String userRank() {
+        int xp = prefs.getInt(KEY_XP, 0);
+        if (xp >= 2500) return "Avanzado";
+        if (xp >= 1200) return "Conversador";
+        if (xp >= 500) return "Explorador";
+        if (xp >= 150) return "Aprendiz";
+        return "Novato";
     }
 
     private void showAchievements() {
@@ -692,15 +1292,19 @@ public class MainActivity extends Activity {
         int streak = prefs.getInt(KEY_STREAK, 0);
         int done = completedSet().size();
         int total = Math.max(1, getOrderedPosts().size());
+        int exams = examPassedSet().size();
+        int mastered = masteredSet().size();
 
         box.addView(heading("Tus logros", 27, BLUE_DARK));
-        box.addView(body("No cambian tu nivel de inglés por magia, pero hacen visible el progreso. Los humanos parecen apreciar esas cosas."));
+        box.addView(body("Aquí se ve lo que has conseguido de verdad: estudiar, practicar, aprobar y mantener constancia."));
         box.addView(achievementCard("🌱", "Primer paso", "Completa tu primera lección", done >= 1));
         box.addView(achievementCard("⭐", "100 XP", "Consigue 100 puntos de experiencia", xp >= 100));
         box.addView(achievementCard("📚", "Estudiante constante", "Completa 5 lecciones", done >= 5));
+        box.addView(achievementCard("🎓", "Primer examen", "Aprueba un examen de unidad", exams >= 1));
+        box.addView(achievementCard("🧠", "20 conceptos", "Domina 20 ejercicios diferentes", mastered >= 20));
         box.addView(achievementCard("🔥", "Racha de 3", "Estudia 3 días seguidos", streak >= 3));
         box.addView(achievementCard("🔥", "Racha de 7", "Estudia 7 días seguidos", streak >= 7));
-        box.addView(achievementCard("🏆", "Ruta completada", "Completa todas las lecciones disponibles", done >= total && total > 1));
+        box.addView(achievementCard("🏆", "Ruta completada", "Completa las lecciones y exámenes disponibles", done >= total && total > 1 && allRequiredExamsPassed(prefs.getInt(KEY_START_INDEX, 0))));
         setContent(scroll);
     }
 
@@ -736,14 +1340,24 @@ public class MainActivity extends Activity {
         profile.addView(body("Inicio: " + prefs.getString(KEY_START_MODE, "Desde cero")));
         profile.addView(body("Objetivo: " + prefs.getString(KEY_GOAL, "Hablar inglés")));
         profile.addView(body("Meta diaria: " + prefs.getInt(KEY_DAILY_MINUTES, 10) + " minutos"));
+        int placement = prefs.getInt(KEY_LEVEL_TEST_SCORE, -1);
+        if (placement >= 0) profile.addView(body("Prueba de nivel: " + placement + "/" + LEVEL_TEST.length));
         box.addView(profile);
 
+        int answered = prefs.getInt(KEY_TOTAL_ANSWERED, 0);
+        int correct = prefs.getInt(KEY_TOTAL_CORRECT, 0);
+        int accuracy = answered == 0 ? 0 : Math.round(correct * 100f / answered);
         LinearLayout stats = card();
         stats.addView(label("ESTADÍSTICAS", GREEN));
         stats.addView(heading("⭐ " + prefs.getInt(KEY_XP, 0) + " XP", 21, BLUE_DARK));
         stats.addView(body("🔥 Racha: " + prefs.getInt(KEY_STREAK, 0) + " días"));
         stats.addView(body("✓ Lecciones completadas: " + completedSet().size()));
-        stats.addView(body("♥ Favoritos: " + favoriteSet().size()));
+        stats.addView(body("🎓 Exámenes aprobados: " + examPassedSet().size() + "/" + UNIT_NAMES.length));
+        stats.addView(body("🎯 Precisión: " + accuracy + "%  (" + correct + "/" + answered + ")"));
+        stats.addView(body("🧠 Conceptos dominados: " + masteredSet().size() + "/" + EXERCISES.length));
+        stats.addView(body("⏱ Tiempo de estudio: " + prefs.getInt(KEY_STUDY_MINUTES, 0) + " min"));
+        stats.addView(body("📊 Sesiones: " + prefs.getInt(KEY_STUDY_SESSIONS, 0)));
+        stats.addView(body("🏅 Nivel de usuario: " + userRank()));
         box.addView(stats);
 
         LinearLayout reminder = card();
@@ -756,9 +1370,10 @@ public class MainActivity extends Activity {
 
         LinearLayout account = card();
         account.addView(label("PREFERENCIAS", PURPLE));
+        account.addView(secondaryButton("🧪 Repetir prueba de nivel", this::restartLevelTest));
         account.addView(secondaryButton("♥ Ver favoritos", this::showFavorites));
         account.addView(secondaryButton("🔎 Todas las lecciones", this::showAllLessons));
-        account.addView(secondaryButton("↻ Configurar mi nivel otra vez", this::resetOnboarding));
+        account.addView(secondaryButton("↻ Configurar inicio otra vez", this::resetOnboarding));
         box.addView(account);
         setContent(scroll);
     }

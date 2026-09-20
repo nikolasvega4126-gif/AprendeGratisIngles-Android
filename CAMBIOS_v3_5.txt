@@ -1,0 +1,17 @@
+APRENDE GRATIS INGLÉS — v3.5
+
+Novedades:
+- Prueba de nivel real de 10 preguntas para quien elige “Ya sé un poco”.
+- Ruta dividida en 6 unidades.
+- Examen de 5 preguntas al terminar cada unidad; se aprueba con 80%.
+- 5 formatos de práctica: elegir, ordenar, completar, escuchar/elegir y escuchar/escribir.
+- Repaso inteligente que prioriza errores más frecuentes.
+- Estadísticas: precisión, respuestas, minutos, sesiones, conceptos dominados y exámenes.
+- Rangos por XP: Novato, Aprendiz, Explorador, Conversador y Avanzado.
+- Mantiene intro, TTS, Blogger dinámico, favoritos, racha, XP y corazones.
+
+Subida a GitHub:
+1) Descomprime este ZIP.
+2) Sube TODO el contenido de esta carpeta a la raíz del repositorio.
+3) Confirma el commit en la rama main.
+4) GitHub Actions generará la APK automáticamente.

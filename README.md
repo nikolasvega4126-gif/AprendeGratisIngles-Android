@@ -1,28 +1,16 @@
-# Aprende gratis inglés Android v3.0
+# Aprende gratis inglés v3.5 — Ruta inteligente
 
-Versión dinámica inspirada en patrones de gamificación y aprendizaje guiado, con identidad propia de Aprende gratis inglés.
+Versión 3.5 de la app Android. Mantiene la intro, el onboarding, Blogger dinámico, TTS, XP, racha, corazones y favoritos, y añade:
 
-## Novedades v3.0
-- Intro animado de 5,5 segundos al abrir la app, con opción de tocar para continuar.
-- Onboarding inicial de 4 preguntas: forma de empezar, nivel, objetivo y minutos diarios.
-- Ruta vertical de aprendizaje con nodos completados, actuales y bloqueados.
-- Orden pedagógico de las lecciones existentes de Blogger; las nuevas entradas siguen cargándose dinámicamente.
-- XP, racha diaria y 5 corazones diarios.
-- Misión diaria de XP adaptada al tiempo de estudio elegido.
-- Práctica rápida de 10 preguntas.
-- Repaso de errores guardados.
-- Logros y trofeos.
-- Perfil con nivel, objetivo, tiempo diario, estadísticas y recordatorio.
-- Favoritos, búsqueda y lectura offline mediante la caché del feed.
-- TTS nativo de Android para la pronunciación.
-- Icono oficial de Aprende gratis inglés.
+- prueba de nivel real de 10 preguntas para usuarios que eligen “Ya sé un poco”;
+- ruta organizada en 6 unidades con desbloqueo progresivo;
+- examen de 5 preguntas al final de cada unidad, aprobación con 80 %;
+- cinco tipos de ejercicios: elegir, ordenar, completar, escuchar/elegir y escuchar/escribir;
+- repaso inteligente priorizado por frecuencia de error;
+- estadísticas de precisión, sesiones, minutos de estudio, conceptos dominados y exámenes;
+- niveles de usuario por XP;
+- contenido de Blogger sigue sincronizándose dinámicamente.
 
-## Dinámica
-Las publicaciones del sitio https://www.aprendegratisingles.com/ se cargan desde el feed de Blogger. Publicar una nueva lección en Blogger no requiere generar una APK nueva para que aparezca en la biblioteca. La ruta prioriza las 20 lecciones del curso y agrega contenido extra después.
+## Compilar
 
-## Compilación
-El workflow `.github/workflows/build-apk.yml` genera `app-debug.apk` en GitHub Actions.
-
-## Versión
-- versionCode: 5
-- versionName: 3.0
+El workflow de GitHub Actions incluido compila `app-debug.apk` automáticamente con cada push a `main` o `master`.

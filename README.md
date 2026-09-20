@@ -1,16 +1,18 @@
-# Aprende gratis inglés v3.5 — Ruta inteligente
+# Aprende gratis inglés — Android v4.0
 
-Versión 3.5 de la app Android. Mantiene la intro, el onboarding, Blogger dinámico, TTS, XP, racha, corazones y favoritos, y añade:
+Versión 4.0 construida sobre la v3.5.
 
-- prueba de nivel real de 10 preguntas para usuarios que eligen “Ya sé un poco”;
-- ruta organizada en 6 unidades con desbloqueo progresivo;
-- examen de 5 preguntas al final de cada unidad, aprobación con 80 %;
-- cinco tipos de ejercicios: elegir, ordenar, completar, escuchar/elegir y escuchar/escribir;
-- repaso inteligente priorizado por frecuencia de error;
-- estadísticas de precisión, sesiones, minutos de estudio, conceptos dominados y exámenes;
-- niveles de usuario por XP;
-- contenido de Blogger sigue sincronizándose dinámicamente.
+## Novedades
+- Entrenador de pronunciación con micrófono y puntuación aproximada por reconocimiento de voz de Android.
+- Repetición espaciada de vocabulario con intervalos de 1, 3, 7, 14 y 30 días.
+- Diccionario personal con estado de memoria y próximo repaso.
+- Conversaciones guiadas: restaurante, aeropuerto y trabajo.
+- Calendario mensual de estudio.
+- Copia y restauración del progreso mediante archivo JSON; desde el selector de Android puede guardarse en Google Drive, OneDrive u otros proveedores instalados.
+- Mantiene ruta, unidades, prueba de nivel, exámenes, ejercicios, XP, racha, corazones, logros, favoritos, Blogger dinámico, TTS e intro.
 
-## Compilar
+## Nota sobre sincronización
+La v4.0 incluye copia/restauración portable en la nube mediante el selector de archivos de Android. La sincronización automática con una cuenta propia requerirá configurar un backend (por ejemplo Firebase) en una versión posterior.
 
-El workflow de GitHub Actions incluido compila `app-debug.apk` automáticamente con cada push a `main` o `master`.
+## Compilación
+GitHub Actions usa el workflow existente en `.github/workflows/build-apk.yml`.

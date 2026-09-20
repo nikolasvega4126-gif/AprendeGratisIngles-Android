@@ -14,6 +14,8 @@ public class ReminderReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm == null) return;
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
@@ -24,7 +26,11 @@ public class ReminderReceiver extends BroadcastReceiver {
             nm.createNotificationChannel(channel);
         }
 
-        Intent open = new Intent(context, MainActivity.class);
+        android.content.SharedPreferences prefs = context.getSharedPreferences("agi_prefs", Context.MODE_PRIVATE);
+        int minutes = prefs.getInt("daily_minutes", 10);
+        int streak = prefs.getInt("streak", 0);
+
+        Intent open = new Intent(context, SplashActivity.class);
         open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pi = PendingIntent.getActivity(
                 context,
@@ -38,8 +44,8 @@ public class ReminderReceiver extends BroadcastReceiver {
                 : new android.app.Notification.Builder(context);
 
         builder.setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("Aprende gratis inglés")
-                .setContentText("Dedica 5 minutos a practicar inglés hoy.")
+                .setContentTitle("🔥 Mantén tu racha de inglés")
+                .setContentText("Tu meta de hoy: " + minutes + " min · Racha actual: " + streak + " días")
                 .setAutoCancel(true)
                 .setContentIntent(pi);
 

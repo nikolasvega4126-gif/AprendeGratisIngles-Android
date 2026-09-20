@@ -100,6 +100,9 @@ public class MainActivity extends Activity {
     private static final String KEY_STUDY_SESSIONS = "study_sessions";
     private static final String KEY_MASTERED = "mastered_exercises";
     private static final String KEY_LEVEL_TEST_SCORE = "level_test_score";
+    private static final String KEY_PROFILE_CREATED = "profile_created_v52";
+    private static final String KEY_USERNAME = "username";
+    private static final String KEY_AVATAR = "avatar";
     private static final String WEAK_PREFIX = "weak_";
     private static final String KEY_STUDY_DATES = "study_dates";
     private static final String KEY_PRON_ATTEMPTS = "pron_attempts";
@@ -116,6 +119,7 @@ public class MainActivity extends Activity {
     private static final int ORANGE = Color.rgb(255, 159, 28);
     private static final int RED = Color.rgb(232, 78, 78);
     private static final int PURPLE = Color.rgb(118, 83, 219);
+    private static final String[] USER_AVATARS = {"🦊", "🐯", "🐼", "🦁", "🐧", "🐸", "🐵", "🐶"};
     private static final int BG = Color.rgb(246, 250, 254);
     private static final int TEXT = Color.rgb(23, 50, 77);
     private static final int MUTED = Color.rgb(97, 113, 132);
@@ -337,6 +341,9 @@ public class MainActivity extends Activity {
     private TextView streakChip;
     private TextView xpChip;
     private TextView livesChip;
+    private TextView leagueTitleView;
+    private TextView leagueSubView;
+    private ProgressBar leagueHeaderProgress;
     private TextToSpeech textToSpeech;
     private boolean ttsReady = false;
     private WebView pendingTtsWebView;
@@ -377,11 +384,113 @@ public class MainActivity extends Activity {
         initTextToSpeech();
         ensureDayState();
 
-        if (!prefs.getBoolean(KEY_ONBOARDED, false)) {
+        if (!prefs.getBoolean(KEY_PROFILE_CREATED, false)) {
+            showUsernameSetup();
+        } else if (!prefs.getBoolean(KEY_ONBOARDED, false)) {
             showOnboarding();
         } else {
             launchApp();
         }
+    }
+
+    private void showUsernameSetup() {
+        LinearLayout root = verticalBox();
+        root.setBackgroundColor(Color.WHITE);
+        root.setPadding(dp(24), dp(28), dp(24), dp(28));
+
+        TextView avatarPreview = new TextView(this);
+        avatarPreview.setText("🦊");
+        avatarPreview.setTextSize(64);
+        avatarPreview.setGravity(Gravity.CENTER);
+        avatarPreview.setBackground(rounded(Color.rgb(239, 248, 255), Color.rgb(204, 228, 248), 30));
+        LinearLayout.LayoutParams avatarLp = new LinearLayout.LayoutParams(dp(126), dp(126));
+        avatarLp.gravity = Gravity.CENTER_HORIZONTAL;
+        root.addView(avatarPreview, avatarLp);
+        root.addView(spacer(22));
+
+        TextView title = heading("Crea tu usuario", 29, BLUE_DARK);
+        title.setGravity(Gravity.CENTER);
+        root.addView(title);
+        TextView intro = body("Este nombre aparecerá en tu perfil y en la Liga XP. No necesitas correo ni contraseña.");
+        intro.setGravity(Gravity.CENTER);
+        root.addView(intro);
+        root.addView(spacer(16));
+
+        EditText username = new EditText(this);
+        username.setHint("@Joshuar");
+        username.setSingleLine(true);
+        username.setTextSize(18);
+        username.setTextColor(BLUE_DARK);
+        username.setHintTextColor(Color.rgb(145, 158, 171));
+        username.setPadding(dp(18), 0, dp(18), 0);
+        username.setBackground(rounded(Color.rgb(248, 251, 254), BORDER, 18));
+        username.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        String existing = prefs.getString(KEY_USERNAME, "");
+        if (!existing.isEmpty()) username.setText(existing);
+        root.addView(username, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(62)));
+
+        TextView hint = body("Usa letras, números, punto o guion bajo. La app añadirá @ si hace falta.");
+        hint.setGravity(Gravity.CENTER);
+        root.addView(hint);
+
+        username.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                String clean = cleanUsername(s.toString());
+                avatarPreview.setText(avatarForUsername(clean));
+            }
+            @Override public void afterTextChanged(android.text.Editable s) {}
+        });
+
+        root.addView(spacer(12));
+        Button enter = primaryButton("Continuar →", () -> {
+            String clean = cleanUsername(username.getText().toString());
+            if (clean.length() < 4) {
+                Toast.makeText(this, "Escribe un usuario de al menos 3 caracteres", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            String avatar = avatarForUsername(clean);
+            prefs.edit()
+                    .putString(KEY_USERNAME, clean)
+                    .putString(KEY_AVATAR, avatar)
+                    .putBoolean(KEY_PROFILE_CREATED, true)
+                    .apply();
+            if (prefs.getBoolean(KEY_ONBOARDED, false)) launchApp();
+            else showOnboarding();
+        });
+        root.addView(enter, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(58)));
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(root);
+        setContentView(scroll);
+    }
+
+    private String cleanUsername(String raw) {
+        String value = raw == null ? "" : raw.trim();
+        if (value.startsWith("@")) value = value.substring(1);
+        value = value.replaceAll("[^A-Za-z0-9._]", "");
+        if (value.length() > 16) value = value.substring(0, 16);
+        return value.isEmpty() ? "" : "@" + value;
+    }
+
+    private String avatarForUsername(String username) {
+        if (username == null || username.isEmpty()) return USER_AVATARS[0];
+        int index = Math.abs(username.toLowerCase(Locale.ROOT).hashCode()) % USER_AVATARS.length;
+        return USER_AVATARS[index];
+    }
+
+    private void cycleAvatar() {
+        String current = prefs.getString(KEY_AVATAR, USER_AVATARS[0]);
+        int next = 0;
+        for (int i = 0; i < USER_AVATARS.length; i++) {
+            if (USER_AVATARS[i].equals(current)) {
+                next = (i + 1) % USER_AVATARS.length;
+                break;
+            }
+        }
+        prefs.edit().putString(KEY_AVATAR, USER_AVATARS[next]).apply();
+        updateHeaderStats();
+        showProfile();
     }
 
     private void launchApp() {
@@ -560,34 +669,43 @@ public class MainActivity extends Activity {
         header.setPadding(dp(12), dp(8), dp(12), dp(8));
         header.setBackgroundColor(BLUE_DARK);
 
-        ImageView logo = new ImageView(this);
-        logo.setImageResource(R.mipmap.ic_launcher);
-        logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        LinearLayout.LayoutParams logoLp = new LinearLayout.LayoutParams(dp(44), dp(44));
-        logoLp.setMargins(0, 0, dp(8), 0);
-        header.addView(logo, logoLp);
+        LinearLayout leaguePanel = horizontal();
+        leaguePanel.setPadding(dp(10), dp(7), dp(10), dp(7));
+        leaguePanel.setBackground(rounded(Color.argb(45, 255, 255, 255), Color.argb(45, 255, 255, 255), 18));
+        leaguePanel.setOnClickListener(v -> showLeague());
 
-        LinearLayout titles = verticalBox();
-        TextView title = new TextView(this);
-        title.setText("Aprende gratis inglés");
-        title.setTextColor(Color.WHITE);
-        title.setTextSize(18);
-        title.setTypeface(Typeface.DEFAULT_BOLD);
-        TextView subtitle = new TextView(this);
-        subtitle.setText("Tu ruta personal");
-        subtitle.setTextColor(Color.rgb(211, 233, 255));
-        subtitle.setTextSize(11);
-        titles.addView(title);
-        titles.addView(subtitle);
-        header.addView(titles, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        TextView medal = new TextView(this);
+        medal.setText("🏅");
+        medal.setTextSize(26);
+        medal.setGravity(Gravity.CENTER);
+        leaguePanel.addView(medal, new LinearLayout.LayoutParams(dp(42), dp(42)));
+
+        LinearLayout leagueText = verticalBox();
+        leagueText.setPadding(dp(6), 0, 0, 0);
+        leagueTitleView = new TextView(this);
+        leagueTitleView.setTextColor(Color.WHITE);
+        leagueTitleView.setTextSize(15);
+        leagueTitleView.setTypeface(Typeface.DEFAULT_BOLD);
+        leagueSubView = new TextView(this);
+        leagueSubView.setTextColor(Color.rgb(211, 233, 255));
+        leagueSubView.setTextSize(10);
+        leagueHeaderProgress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        leagueHeaderProgress.setMax(100);
+        leagueHeaderProgress.setProgressTintList(android.content.res.ColorStateList.valueOf(Color.rgb(255, 211, 67)));
+        leagueText.addView(leagueTitleView);
+        leagueText.addView(leagueSubView);
+        LinearLayout.LayoutParams miniBar = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(4));
+        miniBar.setMargins(0, dp(3), 0, 0);
+        leagueText.addView(leagueHeaderProgress, miniBar);
+        leaguePanel.addView(leagueText, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        header.addView(leaguePanel, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         LinearLayout stats = horizontal();
         stats.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
         streakChip = statChip("🔥 0", ORANGE);
-        xpChip = statChip("⭐ 0", Color.rgb(255, 201, 53));
+        xpChip = null;
         livesChip = statChip("❤️ 5", RED);
         stats.addView(streakChip);
-        stats.addView(xpChip);
         stats.addView(livesChip);
         header.addView(stats);
         root.addView(header);
@@ -683,7 +801,7 @@ public class MainActivity extends Activity {
         if (bottomNav == null) return;
         styleBottomNavItem(navPathBtn, currentSection.equals("path") || currentSection.equals("reader") || currentSection.equals("lessons") || currentSection.equals("favorites"), BLUE);
         styleBottomNavItem(navPracticeBtn, currentSection.equals("practice"), GREEN);
-        styleBottomNavItem(navAchievementsBtn, currentSection.equals("achievements"), ORANGE);
+        styleBottomNavItem(navAchievementsBtn, currentSection.equals("achievements") || currentSection.equals("league"), ORANGE);
         styleBottomNavItem(navProfileBtn, currentSection.equals("profile"), PURPLE);
     }
 
@@ -1587,6 +1705,157 @@ public class MainActivity extends Activity {
         textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, "practice_" + System.currentTimeMillis());
     }
 
+    private int userLevel() {
+        int xp = prefs.getInt(KEY_XP, 0);
+        int[] thresholds = {0, 150, 400, 750, 1200, 1800, 2500, 3500, 5000, 7000, 10000};
+        int level = 1;
+        for (int i = 1; i < thresholds.length; i++) {
+            if (xp >= thresholds[i]) level = i + 1;
+            else break;
+        }
+        if (xp >= thresholds[thresholds.length - 1]) level += (xp - thresholds[thresholds.length - 1]) / 3000;
+        return level;
+    }
+
+    private int levelStartXp() {
+        int xp = prefs.getInt(KEY_XP, 0);
+        int[] thresholds = {0, 150, 400, 750, 1200, 1800, 2500, 3500, 5000, 7000, 10000};
+        int start = 0;
+        for (int threshold : thresholds) {
+            if (xp >= threshold) start = threshold;
+            else break;
+        }
+        if (xp >= 10000) start = 10000 + ((xp - 10000) / 3000) * 3000;
+        return start;
+    }
+
+    private int nextLevelXp() {
+        int xp = prefs.getInt(KEY_XP, 0);
+        int[] thresholds = {150, 400, 750, 1200, 1800, 2500, 3500, 5000, 7000, 10000};
+        for (int threshold : thresholds) if (xp < threshold) return threshold;
+        return levelStartXp() + 3000;
+    }
+
+    private String leagueName() {
+        int xp = prefs.getInt(KEY_XP, 0);
+        if (xp >= 10000) return "Leyenda";
+        if (xp >= 5000) return "Diamante";
+        if (xp >= 2500) return "Oro";
+        if (xp >= 1000) return "Plata";
+        return "Bronce";
+    }
+
+    private String leagueIcon() {
+        String league = leagueName();
+        if ("Leyenda".equals(league)) return "👑";
+        if ("Diamante".equals(league)) return "💎";
+        if ("Oro".equals(league)) return "🥇";
+        if ("Plata".equals(league)) return "🥈";
+        return "🥉";
+    }
+
+    private int levelProgressPercent() {
+        int xp = prefs.getInt(KEY_XP, 0);
+        int start = levelStartXp();
+        int next = nextLevelXp();
+        return Math.max(0, Math.min(100, Math.round((xp - start) * 100f / Math.max(1, next - start))));
+    }
+
+    private static class LeagueEntry {
+        final String avatar;
+        final String username;
+        final int xp;
+        final boolean me;
+        LeagueEntry(String avatar, String username, int xp, boolean me) {
+            this.avatar = avatar;
+            this.username = username;
+            this.xp = xp;
+            this.me = me;
+        }
+    }
+
+    private void showLeague() {
+        currentSection = "league";
+        ScrollView scroll = new ScrollView(this);
+        LinearLayout box = verticalBox();
+        box.setPadding(dp(14), dp(14), dp(14), dp(28));
+        scroll.addView(box);
+
+        int xp = prefs.getInt(KEY_XP, 0);
+        String username = prefs.getString(KEY_USERNAME, "@Estudiante");
+        String avatar = prefs.getString(KEY_AVATAR, avatarForUsername(username));
+
+        LinearLayout hero = card();
+        hero.setBackground(rounded(Color.rgb(235, 246, 255), Color.rgb(199, 225, 247), 22));
+        hero.addView(label("LIGA XP", BLUE));
+        hero.addView(heading(leagueIcon() + "  " + leagueName() + " · Nivel " + userLevel(), 25, BLUE_DARK));
+        hero.addView(body(username + " · " + xp + " XP"));
+        ProgressBar p = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        p.setMax(100);
+        p.setProgress(levelProgressPercent());
+        p.setProgressTintList(android.content.res.ColorStateList.valueOf(GREEN));
+        hero.addView(p, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(10)));
+        hero.addView(body((nextLevelXp() - xp) + " XP para el siguiente nivel"));
+        box.addView(hero);
+
+        box.addView(heading("Clasificación", 24, BLUE_DARK));
+        box.addView(body("Tu posición cambia automáticamente a medida que consigues XP. Esta versión usa una liga local de práctica; el ranking entre teléfonos requerirá sincronización en la nube."));
+
+        int week = Calendar.getInstance().get(Calendar.WEEK_OF_YEAR);
+        List<LeagueEntry> entries = new ArrayList<>();
+        entries.add(new LeagueEntry("🦉", "@LunaTalk", 3380 + (week % 7) * 15, false));
+        entries.add(new LeagueEntry("🐯", "@MateoGo", 2760 + (week % 5) * 22, false));
+        entries.add(new LeagueEntry("🦊", "@SofiSpeak", 2210 + (week % 9) * 12, false));
+        entries.add(new LeagueEntry("🐼", "@EmmaEnglish", 1740 + (week % 6) * 18, false));
+        entries.add(new LeagueEntry("🦁", "@LeoLearn", 1180 + (week % 4) * 27, false));
+        entries.add(new LeagueEntry("🐧", "@ValenXP", 720 + (week % 8) * 11, false));
+        entries.add(new LeagueEntry("🐸", "@NicoTalk", 360 + (week % 3) * 30, false));
+        entries.add(new LeagueEntry(avatar, username, xp, true));
+        Collections.sort(entries, (a, b) -> Integer.compare(b.xp, a.xp));
+
+        for (int i = 0; i < entries.size(); i++) box.addView(leagueRow(i + 1, entries.get(i)));
+        box.addView(primaryButton("← Volver a mi ruta", this::showPath));
+        setContent(scroll);
+    }
+
+    private View leagueRow(int position, LeagueEntry entry) {
+        LinearLayout row = horizontal();
+        row.setPadding(dp(12), dp(10), dp(12), dp(10));
+        row.setBackground(rounded(entry.me ? Color.rgb(232, 247, 237) : Color.WHITE, entry.me ? Color.rgb(179, 226, 192) : BORDER, 18));
+        LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        rowLp.setMargins(0, dp(4), 0, dp(4));
+        row.setLayoutParams(rowLp);
+
+        TextView pos = new TextView(this);
+        pos.setText(position <= 3 ? (position == 1 ? "🥇" : position == 2 ? "🥈" : "🥉") : String.valueOf(position));
+        pos.setTextSize(position <= 3 ? 22 : 16);
+        pos.setTextColor(BLUE_DARK);
+        pos.setTypeface(Typeface.DEFAULT_BOLD);
+        pos.setGravity(Gravity.CENTER);
+        row.addView(pos, new LinearLayout.LayoutParams(dp(42), dp(48)));
+
+        TextView avatar = new TextView(this);
+        avatar.setText(entry.avatar);
+        avatar.setTextSize(28);
+        avatar.setGravity(Gravity.CENTER);
+        row.addView(avatar, new LinearLayout.LayoutParams(dp(52), dp(52)));
+
+        LinearLayout info = verticalBox();
+        TextView name = heading(entry.username + (entry.me ? "  · TÚ" : ""), 16, entry.me ? GREEN_DARK : BLUE_DARK);
+        info.addView(name);
+        info.addView(body(entry.me ? "Tu posición actual" : "Jugador de la liga"));
+        row.addView(info, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView score = new TextView(this);
+        score.setText(entry.xp + " XP");
+        score.setTextColor(entry.me ? GREEN_DARK : BLUE_DARK);
+        score.setTextSize(14);
+        score.setTypeface(Typeface.DEFAULT_BOLD);
+        score.setGravity(Gravity.CENTER_VERTICAL | Gravity.END);
+        row.addView(score, new LinearLayout.LayoutParams(dp(92), dp(52)));
+        return row;
+    }
+
     private String userRank() {
         int xp = prefs.getInt(KEY_XP, 0);
         if (xp >= 2500) return "Avanzado";
@@ -1649,6 +1918,29 @@ public class MainActivity extends Activity {
         scroll.addView(box);
 
         box.addView(heading("Tu perfil", 27, BLUE_DARK));
+
+        LinearLayout identity = card();
+        LinearLayout idRow = horizontal();
+        TextView avatar = new TextView(this);
+        avatar.setText(prefs.getString(KEY_AVATAR, "🦊"));
+        avatar.setTextSize(42);
+        avatar.setGravity(Gravity.CENTER);
+        avatar.setBackground(rounded(Color.rgb(239, 248, 255), Color.rgb(204, 228, 248), 22));
+        idRow.addView(avatar, new LinearLayout.LayoutParams(dp(78), dp(78)));
+        LinearLayout idText = verticalBox();
+        idText.setPadding(dp(14), 0, 0, 0);
+        idText.addView(heading(prefs.getString(KEY_USERNAME, "@Estudiante"), 22, BLUE_DARK));
+        idText.addView(body(leagueIcon() + " " + leagueName() + " · Nivel " + userLevel() + " · " + prefs.getInt(KEY_XP, 0) + " XP"));
+        idRow.addView(idText, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        identity.addView(idRow);
+        LinearLayout idButtons = horizontal();
+        idButtons.addView(secondaryButton("🎭 Cambiar avatar", this::cycleAvatar), new LinearLayout.LayoutParams(0, dp(46), 1f));
+        LinearLayout.LayoutParams leagueLp = new LinearLayout.LayoutParams(0, dp(46), 1f);
+        leagueLp.setMargins(dp(8), 0, 0, 0);
+        idButtons.addView(primaryButton("🏅 Liga XP", this::showLeague), leagueLp);
+        identity.addView(idButtons);
+        box.addView(identity);
+
         LinearLayout profile = card();
         profile.addView(label("PLAN DE ESTUDIO", BLUE));
         profile.addView(heading(prefs.getString(KEY_LEVEL, "Básico"), 23, BLUE_DARK));
@@ -1704,6 +1996,7 @@ public class MainActivity extends Activity {
 
         LinearLayout account = card();
         account.addView(label("PREFERENCIAS", PURPLE));
+        account.addView(secondaryButton("✏️ Cambiar nombre de usuario", this::showUsernameSetup));
         account.addView(secondaryButton("🧪 Repetir prueba de nivel", this::restartLevelTest));
         account.addView(secondaryButton("♥ Ver favoritos", this::showFavorites));
         account.addView(secondaryButton("🔎 Todas las lecciones", this::showAllLessons));
@@ -2181,9 +2474,13 @@ public class MainActivity extends Activity {
     private void updateHeaderStats() {
         if (streakChip == null) return;
         ensureDayState();
+        int xp = prefs.getInt(KEY_XP, 0);
         streakChip.setText("🔥 " + prefs.getInt(KEY_STREAK, 0));
-        xpChip.setText("⭐ " + prefs.getInt(KEY_XP, 0));
+        if (xpChip != null) xpChip.setText("⭐ " + xp);
         livesChip.setText("❤️ " + prefs.getInt(KEY_LIVES, 5));
+        if (leagueTitleView != null) leagueTitleView.setText(leagueIcon() + " Nivel " + userLevel() + " · " + leagueName());
+        if (leagueSubView != null) leagueSubView.setText(xp + " XP · " + (nextLevelXp() - xp) + " para subir");
+        if (leagueHeaderProgress != null) leagueHeaderProgress.setProgress(levelProgressPercent());
     }
 
     private void toggleReminder() {
@@ -2640,7 +2937,7 @@ public class MainActivity extends Activity {
     private JSONObject progressAsJson() throws Exception {
         JSONObject root = new JSONObject();
         root.put("app", "Aprende gratis inglés");
-        root.put("version", "4.0");
+        root.put("version", "5.2");
         JSONObject data = new JSONObject();
         for (Map.Entry<String, ?> entry : prefs.getAll().entrySet()) {
             Object value = entry.getValue();

@@ -192,6 +192,8 @@ public class MainActivity extends Activity {
     private static final int TYPE_FILL = 2;
     private static final int TYPE_LISTEN_CHOICE = 3;
     private static final int TYPE_WRITE_LISTEN = 4;
+    private static final int TYPE_WORD_BANK = 5;
+    private static final int TYPE_SPEAK = 6;
 
     private static class Exercise {
         final int type;
@@ -246,7 +248,21 @@ public class MainActivity extends Activity {
             new Exercise(TYPE_FILL, 5, "Completa: I ___ up at seven", "wake", "I wake up at seven"),
             new Exercise(TYPE_ORDER, 5, "Ordena la frase", "I go to work", "I go to work", "work", "to", "I", "go"),
             new Exercise(TYPE_LISTEN_CHOICE, 5, "Escucha y elige la traducción", "Él desayuna por la mañana", "He eats breakfast in the morning", "Él desayuna por la mañana", "Él trabaja de noche", "Él duerme por la tarde"),
-            new Exercise(TYPE_WRITE_LISTEN, 5, "Escribe lo que escuchas", "We study English", "We study English")
+            new Exercise(TYPE_WRITE_LISTEN, 5, "Escribe lo que escuchas", "We study English", "We study English"),
+
+            // V6.5 · ejercicios más interactivos
+            new Exercise(TYPE_WORD_BANK, 0, "Completa: I am from ___", "Mexico", "I am from Mexico", "Japan", "Mexico", "China", "Brazil"),
+            new Exercise(TYPE_SPEAK, 0, "Repite la frase", "I am from Colombia", "I am from Colombia"),
+            new Exercise(TYPE_WORD_BANK, 1, "Completa: She is my ___", "sister", "She is my sister", "mother", "sister", "friend", "teacher"),
+            new Exercise(TYPE_SPEAK, 1, "Repite la frase", "This is my family", "This is my family"),
+            new Exercise(TYPE_WORD_BANK, 2, "Completa: I ___ happy", "am", "I am happy", "is", "am", "are", "be"),
+            new Exercise(TYPE_SPEAK, 2, "Repite la frase", "He is my brother", "He is my brother"),
+            new Exercise(TYPE_WORD_BANK, 3, "Completa: Today is ___", "Monday", "Today is Monday", "Friday", "Monday", "January", "morning"),
+            new Exercise(TYPE_SPEAK, 3, "Repite la frase", "What time is it", "What time is it"),
+            new Exercise(TYPE_WORD_BANK, 4, "Completa: I drink ___", "water", "I drink water", "house", "water", "blue", "kitchen"),
+            new Exercise(TYPE_SPEAK, 4, "Repite la frase", "I would like some water please", "I would like some water please"),
+            new Exercise(TYPE_WORD_BANK, 5, "Completa: I ___ to work", "go", "I go to work", "go", "goes", "going", "am"),
+            new Exercise(TYPE_SPEAK, 5, "Repite la frase", "I go to work every day", "I go to work every day")
     };
 
     private static final String[][] LEVEL_TEST = {
@@ -839,29 +855,8 @@ public class MainActivity extends Activity {
         box.setPadding(dp(14), dp(14), dp(14), dp(30));
         scroll.addView(box);
 
-        LinearLayout welcome = card();
-        welcome.setBackground(rounded(Color.rgb(234, 246, 255), Color.rgb(203, 227, 246), 22));
-        welcome.addView(label("TU RUTA PERSONALIZADA", BLUE));
-        welcome.addView(heading("Aprende paso a paso", 24, BLUE_DARK));
-        String goal = prefs.getString(KEY_GOAL, "Hablar inglés");
-        int mins = prefs.getInt(KEY_DAILY_MINUTES, 10);
-        welcome.addView(body("Objetivo: " + goal + " · Meta diaria: " + mins + " min"));
-        LinearLayout shortcuts = horizontal();
-        shortcuts.addView(secondaryButton("Todas las lecciones", this::showAllLessons), new LinearLayout.LayoutParams(0, dp(45), 1f));
-        LinearLayout.LayoutParams favLp = new LinearLayout.LayoutParams(0, dp(45), 1f);
-        favLp.setMargins(dp(8), 0, 0, 0);
-        shortcuts.addView(secondaryButton("♥ Favoritos", this::showFavorites), favLp);
-        welcome.addView(shortcuts);
-        box.addView(welcome);
-
-        box.addView(dailyGoalCard());
-        box.addView(spacer(8));
-        box.addView(smartCoachCard());
-        box.addView(spacer(8));
-        box.addView(dailyMissionsCard());
-        box.addView(spacer(8));
-        box.addView(weeklyXpCard());
-        box.addView(spacer(8));
+        // V6.5: inicio deliberadamente limpio. El encabezado ya muestra nivel, XP, racha y corazones.
+        // Aquí comienza directamente la ruta con la unidad actual.
 
         List<PostItem> ordered = getOrderedPosts();
         if (ordered.isEmpty()) {
@@ -928,7 +923,7 @@ public class MainActivity extends Activity {
     private View smartCoachCard() {
         LinearLayout c = card();
         c.setBackground(rounded(Color.rgb(244, 250, 255), Color.rgb(199, 226, 248), 22));
-        c.addView(label("COACH V6", BLUE));
+        c.addView(label("COACH V6.5", BLUE));
         c.addView(heading("Tu siguiente mejor paso", 21, BLUE_DARK));
 
         int errors = errorSet().size();
@@ -1250,7 +1245,7 @@ public class MainActivity extends Activity {
         box.addView(smart);
 
         LinearLayout quick = card();
-        quick.addView(label("RETO RÁPIDO V6", ORANGE));
+        quick.addView(label("RETO RÁPIDO V6.5", ORANGE));
         quick.addView(heading("5 preguntas · pocos minutos", 21, BLUE_DARK));
         quick.addView(body("Una sesión corta para cuando no quieres hacer los 10 ejercicios completos. Usa tus errores y tu unidad actual."));
         quick.addView(primaryButton("⚡ Empezar reto de 5", this::startQuickPractice));
@@ -1797,6 +1792,51 @@ public class MainActivity extends Activity {
             }), checkLp);
             root.addView(spacer(10));
             root.addView(actions);
+        } else if (ex.type == TYPE_WORD_BANK) {
+            TextView sentence = heading(ex.prompt, 24, BLUE_DARK);
+            sentence.setGravity(Gravity.CENTER);
+            sentence.setPadding(dp(12), dp(18), dp(12), dp(18));
+            sentence.setBackground(rounded(Color.rgb(235, 246, 255), Color.rgb(190, 220, 245), 18));
+            root.addView(sentence);
+            root.addView(spacer(18));
+
+            LinearLayout bank = verticalBox();
+            for (String option : ex.options) {
+                Button b = secondaryButton(option, () -> {});
+                b.setTextSize(18);
+                b.setOnClickListener(v -> {
+                    v.animate().scaleX(0.94f).scaleY(0.94f).setDuration(80).withEndAction(() -> {
+                        v.animate().scaleX(1f).scaleY(1f).setDuration(130).start();
+                        answerPractice(session, position, score, reviewOnly, startedAt, exerciseIndex, option.equalsIgnoreCase(ex.answer));
+                    }).start();
+                });
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(54));
+                lp.setMargins(0, dp(5), 0, dp(5));
+                bank.addView(b, lp);
+            }
+            root.addView(bank);
+        } else if (ex.type == TYPE_SPEAK) {
+            LinearLayout speechCard = card();
+            speechCard.setBackground(rounded(Color.rgb(239, 248, 255), Color.rgb(187, 219, 244), 22));
+            TextView phrase = heading(ex.answer, 25, BLUE_DARK);
+            phrase.setGravity(Gravity.CENTER);
+            speechCard.addView(phrase);
+            speechCard.addView(secondaryButton("🔊 ESCUCHAR", () -> speakNative(ex.speak)));
+            TextView speechResult = body("Toca el micrófono y repite la frase.");
+            speechResult.setGravity(Gravity.CENTER);
+            speechCard.addView(speechResult);
+            Button mic = primaryButton("🎙️ HABLAR", () -> {});
+            mic.setTextSize(18);
+            mic.setOnClickListener(v -> {
+                mic.animate().scaleX(1.06f).scaleY(1.06f).setDuration(160).withEndAction(() -> mic.animate().scaleX(1f).scaleY(1f).setDuration(160).start()).start();
+                speechResult.setText("Escuchando…");
+                startSpeechRecognition(ex.answer, speechResult, false, (speechScore, heard) -> {
+                    boolean ok = speechScore >= 70;
+                    answerPractice(session, position, score, reviewOnly, startedAt, exerciseIndex, ok);
+                });
+            });
+            speechCard.addView(mic, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(62)));
+            root.addView(speechCard);
         }
 
         ScrollView scroll = new ScrollView(this);
@@ -1807,9 +1847,65 @@ public class MainActivity extends Activity {
     private void answerPractice(List<Integer> session, int position, int score, boolean reviewOnly, long startedAt, int exerciseIndex, boolean correct) {
         Exercise ex = EXERCISES[exerciseIndex];
         recordExerciseResult(exerciseIndex, correct);
-        if (correct) Toast.makeText(this, "✓ Correcto · +10 XP", Toast.LENGTH_SHORT).show();
-        else Toast.makeText(this, "✗ Correcta: " + ex.answer, Toast.LENGTH_LONG).show();
-        renderPracticeQuestion(session, position + 1, score + (correct ? 1 : 0), reviewOnly, startedAt);
+        showPracticeFeedback(session, position, score, reviewOnly, startedAt, exerciseIndex, correct);
+    }
+
+    private void showPracticeFeedback(List<Integer> session, int position, int score, boolean reviewOnly, long startedAt, int exerciseIndex, boolean correct) {
+        Exercise ex = EXERCISES[exerciseIndex];
+        LinearLayout root = verticalBox();
+        root.setPadding(dp(18), dp(18), dp(18), dp(24));
+        root.setBackgroundColor(BG);
+
+        ProgressBar progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        progress.setMax(session.size());
+        progress.setProgress(position + 1);
+        progress.setProgressTintList(android.content.res.ColorStateList.valueOf(correct ? GREEN : RED));
+        root.addView(progress, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(10)));
+        root.addView(spacer(26));
+
+        TextView icon = heading(correct ? "✓" : "×", 52, Color.WHITE);
+        icon.setGravity(Gravity.CENTER);
+        icon.setBackground(rounded(correct ? GREEN : RED, correct ? GREEN_DARK : Color.rgb(190, 55, 55), 40));
+        LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(dp(80), dp(80));
+        iconLp.gravity = Gravity.CENTER_HORIZONTAL;
+        root.addView(icon, iconLp);
+
+        TextView title = heading(correct ? "¡Muy bien!" : "Casi. Vamos a corregirlo", 27, correct ? GREEN_DARK : RED);
+        title.setGravity(Gravity.CENTER);
+        root.addView(title);
+
+        LinearLayout panel = card();
+        panel.setBackground(rounded(correct ? Color.rgb(237, 250, 241) : Color.rgb(255, 240, 240), correct ? Color.rgb(172, 226, 188) : Color.rgb(244, 184, 184), 20));
+        panel.addView(label(correct ? "+10 XP" : "RESPUESTA CORRECTA", correct ? GREEN_DARK : RED));
+        panel.addView(heading(ex.answer, 22, TEXT));
+        panel.addView(body(explanationFor(ex)));
+        root.addView(panel);
+
+        Button continueButton = primaryButton(correct ? "CONTINUAR" : "ENTENDIDO", () ->
+                renderPracticeQuestion(session, position + 1, score + (correct ? 1 : 0), reviewOnly, startedAt));
+        if (!correct) {
+            continueButton.setBackground(rounded(RED, Color.rgb(190, 55, 55), 16));
+        }
+        root.addView(continueButton, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(60)));
+
+        root.setAlpha(0f);
+        root.setTranslationY(dp(24));
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(root);
+        setContent(scroll);
+        root.animate().alpha(1f).translationY(0f).setDuration(260).start();
+    }
+
+    private String explanationFor(Exercise ex) {
+        String p = ex.prompt.toLowerCase(Locale.ROOT);
+        if (p.contains("i ___ happy") || (ex.answer.equalsIgnoreCase("am") && p.contains("happy"))) return "Con ‘I’ usamos ‘am’: I am happy.";
+        if (p.contains("thank")) return "La expresión completa es ‘Thank you’, que significa ‘Gracias’.";
+        if (p.contains("from")) return "Usamos ‘from’ para indicar de dónde viene una persona.";
+        if (p.contains("sister")) return "‘Sister’ significa ‘hermana’.";
+        if (ex.type == TYPE_SPEAK) return "Escucha el modelo, repite con calma y vuelve a intentarlo cuando quieras.";
+        if (ex.type == TYPE_ORDER) return "En inglés el orden de las palabras es importante. Observa la estructura completa.";
+        if (ex.type == TYPE_WRITE_LISTEN || ex.type == TYPE_LISTEN_CHOICE) return "Escucha primero la frase completa y luego identifica las palabras clave.";
+        return "Fíjate en la frase correcta y compárala con tu respuesta antes de continuar.";
     }
 
     private void showPracticeResult(int score, int total, boolean reviewOnly, long startedAt) {
@@ -1892,6 +1988,8 @@ public class MainActivity extends Activity {
         if (type == TYPE_FILL) return "COMPLETA";
         if (type == TYPE_LISTEN_CHOICE) return "ESCUCHA Y ELIGE";
         if (type == TYPE_WRITE_LISTEN) return "ESCUCHA Y ESCRIBE";
+        if (type == TYPE_WORD_BANK) return "COMPLETA CON PALABRAS";
+        if (type == TYPE_SPEAK) return "HABLA Y PRACTICA";
         return "ELIGE LA RESPUESTA";
     }
 
@@ -2210,7 +2308,7 @@ public class MainActivity extends Activity {
 
     private View masteryMapCard() {
         LinearLayout c = card();
-        c.addView(label("MAPA DE DOMINIO V6", GREEN));
+        c.addView(label("MAPA DE DOMINIO V6.5", GREEN));
         c.addView(heading("Lo que ya dominas", 21, BLUE_DARK));
         c.addView(body("El progreso se calcula con los conceptos que has respondido correctamente en cada unidad."));
 

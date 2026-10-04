@@ -1252,7 +1252,16 @@ public class MainActivity extends Activity {
         Button audio=primaryButton("🔊  ESCUCHAR",()->speakNative(st.english)); root.addView(audio,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,dp(58))); root.addView(spacer(12));
         if(st.type==TYPE_CHOICE){ for(String opt:st.options){ Button b=secondaryButton(opt,()->{boolean ok=normalizeAnswer(opt).equals(normalizeAnswer(st.answer)); renderUnitOneExamStep(exam,pos+1,score+(ok?1:0));}); root.addView(b,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,dp(56))); root.addView(spacer(6)); }}
         else if(st.type==TYPE_FILL){ EditText e=new EditText(this); e.setHint("Escribe tu respuesta..."); e.setTextSize(18); e.setBackground(rounded(Color.WHITE,Color.rgb(151,207,240),18)); e.setPadding(dp(16),0,dp(16),0); root.addView(e,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,dp(62))); root.addView(spacer(10)); root.addView(primaryGreenButton("COMPROBAR",()->{boolean ok=normalizeAnswer(e.getText().toString()).equals(normalizeAnswer(st.answer)); renderUnitOneExamStep(exam,pos+1,score+(ok?1:0));})); }
-        else { TextView status=heading("🎙️ Repite la frase",18,BLUE_DARK); status.setGravity(Gravity.CENTER); root.addView(status); root.addView(primaryGreenButton("USAR MICRÓFONO",()->startSpeechRecognition(st.answer,status,false,(speechScore,heard)->renderUnitOneExamStep(exam,pos+1,score+(speechScore>=65?1:0)))) ; }
+        else {
+            TextView status=heading("🎙️ Repite la frase",18,BLUE_DARK);
+            status.setGravity(Gravity.CENTER);
+            root.addView(status);
+            root.addView(primaryGreenButton("USAR MICRÓFONO", () ->
+                    startSpeechRecognition(st.answer, status, false, (speechScore, heard) ->
+                            renderUnitOneExamStep(exam, pos + 1, score + (speechScore >= 65 ? 1 : 0))
+                    )
+            ));
+        }
         setContent(scroll);
     }
 

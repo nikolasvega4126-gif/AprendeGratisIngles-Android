@@ -1,0 +1,19 @@
+Aprende Gratis Inglés V6.5 - corrección de compilación
+
+Corregido:
+- Error de sintaxis en MainActivity.java, método renderUnitOneExamStep().
+- Se reestructuró la llamada al reconocimiento por micrófono para cerrar correctamente
+  primaryGreenButton(), startSpeechRecognition() y root.addView().
+- Se comprobó el archivo Java con javac: ya no aparecen errores de sintaxis.
+  Los únicos errores locales restantes de javac son las referencias Android, porque este
+  entorno no incluye el Android SDK.
+
+Versión:
+versionCode = 13
+versionName = 6.5
+
+Unidad 1:
+- Saludos en inglés
+- Di de dónde eres
+- Números en inglés del 1 al 10
+- Examen de unidad

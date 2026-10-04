@@ -517,6 +517,9 @@ public class MainActivity extends Activity {
         loadFeed(false);
         requestNotificationPermissionIfNeeded();
         if (prefs.getBoolean(KEY_REMINDER, true)) scheduleDailyReminder();
+        if (!getIntent().getBooleanExtra("skip_visual_route", false)) {
+            startActivity(new Intent(this, VisualGameActivity.class));
+        }
     }
 
     private void showOnboarding() {

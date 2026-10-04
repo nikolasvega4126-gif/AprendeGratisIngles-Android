@@ -30,6 +30,12 @@
             </intent-filter>
         </activity>
 
+
+        <activity
+            android:name=".VisualGameActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
         <activity
             android:name=".MainActivity"
             android:exported="false"

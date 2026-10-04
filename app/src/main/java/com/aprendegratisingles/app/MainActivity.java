@@ -103,6 +103,13 @@ public class MainActivity extends Activity {
     private static final String KEY_PROFILE_CREATED = "profile_created_v52";
     private static final String KEY_USERNAME = "username";
     private static final String KEY_AVATAR = "avatar";
+    // V6: plan diario inteligente y progreso semanal
+    private static final String KEY_V6_MISSION_DAY = "v6_mission_day";
+    private static final String KEY_V6_LESSON_DONE = "v6_lesson_done";
+    private static final String KEY_V6_PRACTICE_DONE = "v6_practice_done";
+    private static final String KEY_V6_PRON_DONE = "v6_pron_done";
+    private static final String KEY_V6_BONUS_CLAIMED = "v6_bonus_claimed";
+    private static final String XP_DAY_PREFIX = "xp_day_";
     private static final String WEAK_PREFIX = "weak_";
     private static final String KEY_STUDY_DATES = "study_dates";
     private static final String KEY_PRON_ATTEMPTS = "pron_attempts";
@@ -851,6 +858,7 @@ public class MainActivity extends Activity {
         shortcuts.addView(secondaryButton("♥ Favoritos", this::showFavorites), favLp);
         welcome.addView(shortcuts);
         box.addView(welcome);
+        box.addView(v6ContinueCard());
 
         box.addView(dailyGoalCard());
         box.addView(spacer(8));
@@ -900,20 +908,118 @@ public class MainActivity extends Activity {
         setContent(scroll);
     }
 
-    private View dailyGoalCard() {
+    private View v6ContinueCard() {
+        List<PostItem> ordered = getOrderedPosts();
+        if (ordered.isEmpty()) return cardMessage("Continúa aprendiendo", "Tus lecciones se están sincronizando con la web.");
+        int startIndex = Math.min(prefs.getInt(KEY_START_INDEX, 0), Math.max(0, ordered.size() - 1));
+        int current = findCurrentPathIndex(ordered, startIndex);
+        current = Math.max(0, Math.min(current, ordered.size() - 1));
+        PostItem next = ordered.get(current);
         LinearLayout c = card();
-        c.addView(label("MISIÓN DE HOY", ORANGE));
+        c.setBackground(rounded(Color.rgb(239, 248, 255), Color.rgb(194, 224, 249), 20));
+        c.addView(label("CONTINÚA DONDE QUEDASTE", BLUE));
+        c.addView(heading(next.title == null || next.title.isEmpty() ? "Siguiente lección" : next.title, 20, BLUE_DARK));
+        int done = completedSet().size();
+        c.addView(body("Progreso: " + done + "/" + ordered.size() + " lecciones completadas"));
+        c.addView(primaryButton("▶ Abrir siguiente lección", () -> openPost(next)));
+        return c;
+    }
+
+    private void openCurrentLessonV6() {
+        List<PostItem> ordered = getOrderedPosts();
+        if (ordered.isEmpty()) {
+            Toast.makeText(this, "Las lecciones todavía se están sincronizando", Toast.LENGTH_SHORT).show();
+            showPath();
+            return;
+        }
+        int startIndex = Math.min(prefs.getInt(KEY_START_INDEX, 0), Math.max(0, ordered.size() - 1));
+        int current = findCurrentPathIndex(ordered, startIndex);
+        current = Math.max(0, Math.min(current, ordered.size() - 1));
+        openPost(ordered.get(current));
+    }
+
+    private View dailyGoalCard() {
+        ensureV6MissionDay();
+        LinearLayout c = card();
+        c.setBackground(rounded(Color.rgb(255, 250, 236), Color.rgb(255, 224, 153), 20));
+        c.addView(label("COACH DE HOY · V6", ORANGE));
+
         int goalXp = dailyXpGoal();
         int todayXp = prefs.getInt(KEY_TODAY_XP, 0);
         int pct = Math.min(100, Math.round(todayXp * 100f / Math.max(1, goalXp)));
-        c.addView(heading(todayXp + " / " + goalXp + " XP", 21, BLUE_DARK));
+        c.addView(heading("Tu plan de 10 minutos", 22, BLUE_DARK));
+        c.addView(body("Haz una lección, una práctica y una frase de pronunciación. Al completar las 3 recibes +40 XP extra."));
+
         ProgressBar bar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         bar.setMax(100);
         bar.setProgress(pct);
         bar.setProgressTintList(android.content.res.ColorStateList.valueOf(ORANGE));
-        c.addView(bar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(12)));
-        c.addView(body(pct >= 100 ? "✓ Meta diaria completada" : "Completa lecciones o práctica para llenar tu meta diaria."));
+        c.addView(bar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(10)));
+        c.addView(body(todayXp + " / " + goalXp + " XP de la meta diaria"));
+
+        boolean lesson = prefs.getBoolean(KEY_V6_LESSON_DONE, false);
+        boolean practice = prefs.getBoolean(KEY_V6_PRACTICE_DONE, false);
+        boolean pron = prefs.getBoolean(KEY_V6_PRON_DONE, false);
+        c.addView(v6MissionRow(lesson, "📘", "Completa una lección"));
+        c.addView(v6MissionRow(practice, "🧠", "Termina una práctica"));
+        c.addView(v6MissionRow(pron, "🎙️", "Pronuncia una frase con 70% o más"));
+
+        int completed = (lesson ? 1 : 0) + (practice ? 1 : 0) + (pron ? 1 : 0);
+        if (completed == 3) {
+            boolean claimed = prefs.getBoolean(KEY_V6_BONUS_CLAIMED, false);
+            c.addView(primaryButton(claimed ? "✓ Bonus diario conseguido" : "🎁 Reclamar +40 XP", () -> {
+                if (!prefs.getBoolean(KEY_V6_BONUS_CLAIMED, false)) {
+                    prefs.edit().putBoolean(KEY_V6_BONUS_CLAIMED, true).apply();
+                    awardXp(40);
+                    Toast.makeText(this, "Misión diaria completa · +40 XP", Toast.LENGTH_LONG).show();
+                    showPath();
+                }
+            }));
+        } else {
+            String next = !lesson ? "Continuar ruta" : !practice ? "Practicar ahora" : "Entrenar pronunciación";
+            c.addView(secondaryButton("▶ " + next, () -> {
+                if (!prefs.getBoolean(KEY_V6_LESSON_DONE, false)) openCurrentLessonV6();
+                else if (!prefs.getBoolean(KEY_V6_PRACTICE_DONE, false)) showQuickPractice();
+                else showPronunciationCoach();
+            }));
+        }
         return c;
+    }
+
+    private View v6MissionRow(boolean done, String icon, String text) {
+        LinearLayout row = horizontal();
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        TextView status = new TextView(this);
+        status.setText(done ? "✓" : icon);
+        status.setTextSize(done ? 21 : 19);
+        status.setTextColor(done ? GREEN_DARK : BLUE_DARK);
+        status.setGravity(Gravity.CENTER);
+        row.addView(status, new LinearLayout.LayoutParams(dp(42), dp(40)));
+        TextView t = body(text);
+        if (done) {
+            t.setText(text + " · hecho");
+            t.setTextColor(GREEN_DARK);
+        }
+        row.addView(t, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        return row;
+    }
+
+    private void ensureV6MissionDay() {
+        String today = dayKey(0);
+        if (!today.equals(prefs.getString(KEY_V6_MISSION_DAY, ""))) {
+            prefs.edit()
+                    .putString(KEY_V6_MISSION_DAY, today)
+                    .putBoolean(KEY_V6_LESSON_DONE, false)
+                    .putBoolean(KEY_V6_PRACTICE_DONE, false)
+                    .putBoolean(KEY_V6_PRON_DONE, false)
+                    .putBoolean(KEY_V6_BONUS_CLAIMED, false)
+                    .apply();
+        }
+    }
+
+    private void markV6Mission(String key) {
+        ensureV6MissionDay();
+        if (!prefs.getBoolean(key, false)) prefs.edit().putBoolean(key, true).apply();
     }
 
     private View pathNode(PostItem p, int index, boolean completed, boolean placementPassed, boolean current, boolean locked) {
@@ -1053,6 +1159,7 @@ public class MainActivity extends Activity {
         smart.addView(heading("Práctica personalizada", 21, BLUE_DARK));
         smart.addView(body("10 ejercicios adaptados a tu unidad actual y a los conceptos que más te cuestan."));
         smart.addView(primaryButton("🧠 Empezar sesión", () -> showQuiz(false)));
+        smart.addView(secondaryButton("⚡ Práctica rápida · 5 preguntas", this::showQuickPractice));
         box.addView(smart);
 
         LinearLayout mistakes = card();
@@ -1096,6 +1203,16 @@ public class MainActivity extends Activity {
         box.addView(conv);
 
         setContent(scroll);
+    }
+
+    private void showQuickPractice() {
+        List<Integer> session = buildPracticeSession(false);
+        if (session.size() > 5) session = new ArrayList<>(session.subList(0, 5));
+        if (session.isEmpty()) {
+            showQuiz(false);
+            return;
+        }
+        renderPracticeQuestion(session, 0, 0, false, System.currentTimeMillis());
     }
 
     private void showQuiz(boolean reviewOnly) {
@@ -1614,6 +1731,7 @@ public class MainActivity extends Activity {
     private void showPracticeResult(int score, int total, boolean reviewOnly, long startedAt) {
         addStudySession(startedAt);
         recordStudyActivity();
+        markV6Mission(KEY_V6_PRACTICE_DONE);
         if (total > 0 && score == total) awardXp(20);
         int pct = total == 0 ? 0 : Math.round(score * 100f / total);
 
@@ -1881,6 +1999,7 @@ public class MainActivity extends Activity {
 
         box.addView(heading("Tus logros", 27, BLUE_DARK));
         box.addView(body("Aquí se ve lo que has conseguido de verdad: estudiar, practicar, aprobar y mantener constancia."));
+        box.addView(v6WeeklyProgressCard());
         box.addView(achievementCard("🌱", "Primer paso", "Completa tu primera lección", done >= 1));
         box.addView(achievementCard("⭐", "100 XP", "Consigue 100 puntos de experiencia", xp >= 100));
         box.addView(achievementCard("📚", "Estudiante constante", "Completa 5 lecciones", done >= 5));
@@ -1890,6 +2009,50 @@ public class MainActivity extends Activity {
         box.addView(achievementCard("🔥", "Racha de 7", "Estudia 7 días seguidos", streak >= 7));
         box.addView(achievementCard("🏆", "Ruta completada", "Completa las lecciones y exámenes disponibles", done >= total && total > 1 && allRequiredExamsPassed(prefs.getInt(KEY_START_INDEX, 0))));
         setContent(scroll);
+    }
+
+    private View v6WeeklyProgressCard() {
+        LinearLayout c = card();
+        c.addView(label("PROGRESO · ÚLTIMOS 7 DÍAS", BLUE));
+        int max = 1;
+        int total = 0;
+        int[] values = new int[7];
+        for (int i = 0; i < 7; i++) {
+            values[i] = prefs.getInt(XP_DAY_PREFIX + dayKey(i - 6), 0);
+            max = Math.max(max, values[i]);
+            total += values[i];
+        }
+        c.addView(heading(total + " XP esta semana", 21, BLUE_DARK));
+        for (int i = 0; i < 7; i++) {
+            LinearLayout row = horizontal();
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            TextView day = new TextView(this);
+            day.setText(v6DayLabel(i - 6));
+            day.setTextSize(12);
+            day.setTextColor(MUTED);
+            row.addView(day, new LinearLayout.LayoutParams(dp(38), dp(28)));
+            ProgressBar b = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+            b.setMax(max);
+            b.setProgress(values[i]);
+            b.setProgressTintList(android.content.res.ColorStateList.valueOf(i == 6 ? GREEN : BLUE));
+            row.addView(b, new LinearLayout.LayoutParams(0, dp(10), 1f));
+            TextView xp = new TextView(this);
+            xp.setText(values[i] + " XP");
+            xp.setTextSize(11);
+            xp.setTextColor(BLUE_DARK);
+            xp.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+            row.addView(xp, new LinearLayout.LayoutParams(dp(62), dp(28)));
+            c.addView(row);
+        }
+        return c;
+    }
+
+    private String v6DayLabel(int offsetDays) {
+        Calendar c = Calendar.getInstance();
+        c.add(Calendar.DAY_OF_YEAR, offsetDays);
+        String d = new SimpleDateFormat("EEE", new Locale("es", "ES")).format(c.getTime());
+        if (d.length() > 3) d = d.substring(0, 3);
+        return d.toUpperCase(Locale.ROOT);
     }
 
     private View achievementCard(String icon, String title, String description, boolean unlocked) {
@@ -1942,7 +2105,7 @@ public class MainActivity extends Activity {
         box.addView(identity);
 
         LinearLayout profile = card();
-        profile.addView(label("PLAN DE ESTUDIO", BLUE));
+        profile.addView(label("PLAN DE ESTUDIO · V6", BLUE));
         profile.addView(heading(prefs.getString(KEY_LEVEL, "Básico"), 23, BLUE_DARK));
         profile.addView(body("Inicio: " + prefs.getString(KEY_START_MODE, "Desde cero")));
         profile.addView(body("Objetivo: " + prefs.getString(KEY_GOAL, "Hablar inglés")));
@@ -1966,6 +2129,7 @@ public class MainActivity extends Activity {
         stats.addView(body("📊 Sesiones: " + prefs.getInt(KEY_STUDY_SESSIONS, 0)));
         stats.addView(body("🏅 Nivel de usuario: " + userRank()));
         box.addView(stats);
+        box.addView(v6WeeklyProgressCard());
 
         LinearLayout reminder = card();
         reminder.addView(label("RECORDATORIO", ORANGE));
@@ -2172,6 +2336,7 @@ public class MainActivity extends Activity {
             prefs.edit().putStringSet(KEY_COMPLETED, set).apply();
             awardXp(50);
             recordStudyActivity();
+            markV6Mission(KEY_V6_LESSON_DONE);
             Toast.makeText(this, "Lección completada · +50 XP · ¡Nueva etapa desbloqueada!", Toast.LENGTH_LONG).show();
         }
         showPath();
@@ -2433,7 +2598,13 @@ public class MainActivity extends Activity {
         ensureDayState();
         int total = prefs.getInt(KEY_XP, 0) + amount;
         int today = prefs.getInt(KEY_TODAY_XP, 0) + amount;
-        prefs.edit().putInt(KEY_XP, total).putInt(KEY_TODAY_XP, today).apply();
+        String xpDayKey = XP_DAY_PREFIX + dayKey(0);
+        int dailyStored = prefs.getInt(xpDayKey, 0) + amount;
+        prefs.edit()
+                .putInt(KEY_XP, total)
+                .putInt(KEY_TODAY_XP, today)
+                .putInt(xpDayKey, dailyStored)
+                .apply();
         updateHeaderStats();
     }
 
@@ -2635,6 +2806,7 @@ public class MainActivity extends Activity {
         int good = prefs.getInt(KEY_PRON_GOOD, 0) + (score >= 70 ? 1 : 0);
         prefs.edit().putInt(KEY_PRON_ATTEMPTS, attempts).putInt(KEY_PRON_GOOD, good).apply();
 
+        if (score >= 70) markV6Mission(KEY_V6_PRON_DONE);
         if (score >= 70 && speechAwardStandaloneXp) {
             awardXp(10);
             recordStudyActivity();

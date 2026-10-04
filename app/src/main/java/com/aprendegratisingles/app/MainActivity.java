@@ -853,54 +853,412 @@ public class MainActivity extends Activity {
         ScrollView scroll = new ScrollView(this);
         LinearLayout box = verticalBox();
         box.setPadding(dp(14), dp(14), dp(14), dp(30));
+        box.setBackgroundColor(Color.rgb(236, 248, 255));
         scroll.addView(box);
 
-        // V6.5: inicio deliberadamente limpio. El encabezado ya muestra nivel, XP, racha y corazones.
-        // Aquí comienza directamente la ruta con la unidad actual.
+        LinearLayout banner = card();
+        banner.setPadding(dp(20), dp(18), dp(20), dp(18));
+        GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{Color.rgb(248,253,255), Color.rgb(225,245,255)});
+        bg.setCornerRadius(dp(24));
+        bg.setStroke(dp(1), Color.rgb(182,224,248));
+        banner.setBackground(bg);
+        banner.addView(label("UNIDAD 1", BLUE));
+        banner.addView(heading("Primeros pasos", 28, BLUE_DARK));
+        banner.addView(body("Saludos, presentaciones y números básicos."));
+        TextView london = heading("🇬🇧  LONDRES · EMPIEZA TU AVENTURA", 13, BLUE);
+        london.setGravity(Gravity.END);
+        banner.addView(london);
+        box.addView(banner);
+        box.addView(spacer(12));
 
-        List<PostItem> ordered = getOrderedPosts();
-        if (ordered.isEmpty()) {
-            box.addView(cardMessage("Cargando tu ruta…", "Estamos sincronizando las lecciones publicadas en tu web."));
-            setContent(scroll);
-            return;
-        }
+        int current = 0;
+        if (prefs.getBoolean("u1_done_0", false)) current = 1;
+        if (prefs.getBoolean("u1_done_1", false)) current = 2;
+        if (prefs.getBoolean("u1_done_2", false)) current = 3;
 
-        int startIndex = Math.min(prefs.getInt(KEY_START_INDEX, 0), Math.max(0, ordered.size() - 1));
-        int current = findCurrentPathIndex(ordered, startIndex);
-        Set<String> done = completedSet();
+        box.addView(unitOneLessonNode(0, "Saludos en inglés", "👋", current));
+        box.addView(unitOneConnector(current > 0));
+        box.addView(unitOneLessonNode(1, "Di de dónde eres", "🌍", current));
+        box.addView(unitOneConnector(current > 1));
+        box.addView(unitOneLessonNode(2, "Números en inglés del 1 al 10", "🔢", current));
+        box.addView(unitOneConnector(current > 2));
+        box.addView(unitOneExamNode(current));
 
-        for (int unit = 0; unit < UNIT_NAMES.length; unit++) {
-            boolean unitUnlocked = isUnitUnlocked(unit, startIndex);
-            boolean placementPassed = UNIT_END[unit] < startIndex;
-
-            LinearLayout banner = card();
-            banner.setBackground(rounded(unitUnlocked ? Color.rgb(240, 248, 255) : Color.rgb(244, 246, 248), BORDER, 18));
-            banner.addView(label("UNIDAD " + (unit + 1), unitUnlocked ? BLUE : MUTED));
-            banner.addView(heading((unitUnlocked ? "" : "🔒 ") + UNIT_NAMES[unit], 21, unitUnlocked ? BLUE_DARK : MUTED));
-            banner.addView(body(unitDescription(unit)));
-            box.addView(banner);
-
-            int from = UNIT_START[unit];
-            int to = Math.min(UNIT_END[unit], ordered.size() - 1);
-            for (int i = from; i <= to; i++) {
-                PostItem post = ordered.get(i);
-                boolean skippedByPlacement = i < startIndex;
-                boolean completed = done.contains(post.url);
-                boolean isCurrent = unitUnlocked && i == current;
-                boolean locked = !unitUnlocked || (!completed && !skippedByPlacement && i != current);
-                box.addView(pathNode(post, i, completed, skippedByPlacement, isCurrent, locked));
-                if (i < to) box.addView(pathConnector(i, current, completed || skippedByPlacement));
-            }
-
-            box.addView(unitExamCard(unit, ordered, startIndex, done, placementPassed));
-            box.addView(spacer(12));
-        }
-
-        if (done.size() >= ordered.size() && allRequiredExamsPassed(startIndex)) {
-            box.addView(cardMessage("🏆 Ruta completada", "Terminaste las lecciones y los exámenes disponibles. Las nuevas publicaciones se añadirán automáticamente."));
-        }
+        LinearLayout next = card();
+        next.setBackground(rounded(Color.rgb(250, 252, 255), Color.rgb(221, 231, 242), 20));
+        next.addView(label("DESPUÉS", PURPLE));
+        next.addView(heading("Unidad 2 · Personas y acciones", 18, current >= 3 && prefs.getBoolean("u1_exam_passed", false) ? BLUE_DARK : MUTED));
+        next.addView(body(prefs.getBoolean("u1_exam_passed", false) ? "Unidad desbloqueada. Tu aventura continúa." : "Completa la Unidad 1 para desbloquearla."));
+        box.addView(next);
 
         setContent(scroll);
+    }
+
+    private View unitOneConnector(boolean active) {
+        LinearLayout wrap = verticalBox();
+        wrap.setGravity(Gravity.CENTER_HORIZONTAL);
+        View line = new View(this);
+        line.setBackgroundColor(active ? Color.rgb(56, 205, 111) : Color.rgb(174, 198, 220));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(7), dp(34));
+        lp.setMargins(0, dp(2), 0, dp(2));
+        wrap.addView(line, lp);
+        return wrap;
+    }
+
+    private View unitOneLessonNode(int lesson, String title, String emoji, int current) {
+        boolean done = prefs.getBoolean("u1_done_" + lesson, false);
+        boolean locked = lesson > current;
+        boolean active = lesson == current && current < 3;
+
+        LinearLayout row = horizontal();
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        boolean right = lesson % 2 == 1;
+        if (right) row.addView(weightSpacer());
+
+        Button node = new Button(this);
+        node.setText(done ? "✓" : locked ? "🔒" : "▶");
+        node.setTextSize(active ? 28 : 22);
+        node.setTextColor(Color.WHITE);
+        node.setTypeface(Typeface.DEFAULT_BOLD);
+        GradientDrawable circle = new GradientDrawable();
+        circle.setShape(GradientDrawable.OVAL);
+        circle.setColor(done ? GREEN : locked ? Color.rgb(166,187,207) : BLUE);
+        circle.setStroke(dp(active ? 6 : 3), active ? Color.rgb(95,225,255) : Color.WHITE);
+        node.setBackground(circle);
+        node.setElevation(active ? dp(12) : dp(4));
+        if (active) animatePlayNode(node);
+
+        LinearLayout text = verticalBox();
+        TextView icon = heading(emoji + "  " + title, active ? 19 : 17, locked ? MUTED : BLUE_DARK);
+        text.addView(icon);
+        if (active) text.addView(label("JUGAR · SIGUIENTE", BLUE));
+        else if (done) text.addView(label("COMPLETADA", GREEN_DARK));
+        else text.addView(label("BLOQUEADA", MUTED));
+        text.setPadding(dp(14), dp(10), dp(14), dp(10));
+        text.setBackground(rounded(Color.WHITE, Color.rgb(214,229,242), 20));
+        text.setElevation(dp(3));
+
+        LinearLayout.LayoutParams nodeLp = new LinearLayout.LayoutParams(active ? dp(92) : dp(78), active ? dp(92) : dp(78));
+        row.addView(node, nodeLp);
+        LinearLayout.LayoutParams txtLp = new LinearLayout.LayoutParams(dp(235), ViewGroup.LayoutParams.WRAP_CONTENT);
+        txtLp.setMargins(dp(10), 0, 0, 0);
+        row.addView(text, txtLp);
+        if (!right) row.addView(weightSpacer());
+
+        View.OnClickListener click = v -> {
+            if (locked) {
+                shakeLockedNode(node);
+                Toast.makeText(this, "Completa la lección anterior", Toast.LENGTH_SHORT).show();
+            } else {
+                startUnitOneLesson(lesson);
+            }
+        };
+        node.setOnClickListener(click);
+        text.setOnClickListener(click);
+        return row;
+    }
+
+    private View unitOneExamNode(int current) {
+        LinearLayout row = horizontal();
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        boolean unlocked = current >= 3;
+        boolean passed = prefs.getBoolean("u1_exam_passed", false);
+        TextView chest = new TextView(this);
+        chest.setText(passed ? "🏆" : unlocked ? "🎁" : "🔒");
+        chest.setTextSize(48);
+        chest.setGravity(Gravity.CENTER);
+        chest.setBackground(rounded(passed ? Color.rgb(255,244,190) : Color.rgb(255,249,220), Color.rgb(255,202,62), 40));
+        row.addView(chest, new LinearLayout.LayoutParams(dp(92), dp(92)));
+
+        Button exam = new Button(this);
+        exam.setText(passed ? "UNIDAD COMPLETADA ✓" : "EXAMEN DE UNIDAD  ›");
+        exam.setAllCaps(false);
+        exam.setTextSize(16);
+        exam.setTypeface(Typeface.DEFAULT_BOLD);
+        exam.setTextColor(unlocked ? Color.rgb(129,78,0) : MUTED);
+        exam.setBackground(rounded(unlocked ? Color.rgb(255,244,196) : Color.rgb(239,243,247), unlocked ? Color.rgb(255,201,61) : BORDER, 18));
+        exam.setEnabled(unlocked && !passed);
+        exam.setOnClickListener(v -> startUnitOneExam());
+        LinearLayout.LayoutParams ep = new LinearLayout.LayoutParams(0, dp(72), 1f);
+        ep.setMargins(dp(10), 0, 0, 0);
+        row.addView(exam, ep);
+        return row;
+    }
+
+    private static class U1Step {
+        final int type;
+        final String title;
+        final String prompt;
+        final String english;
+        final String answer;
+        final String[] options;
+        U1Step(int type, String title, String prompt, String english, String answer, String... options) {
+            this.type=type; this.title=title; this.prompt=prompt; this.english=english; this.answer=answer; this.options=options;
+        }
+    }
+
+    private List<U1Step> unitOneSteps(int lesson) {
+        List<U1Step> s = new ArrayList<>();
+        if (lesson == 0) {
+            s.add(new U1Step(TYPE_LISTEN_CHOICE, "Escucha y elige", "¿Qué significa lo que escuchas?", "Good morning", "Buenos días", "Buenos días", "Buenas noches", "Gracias", "Hasta luego"));
+            s.add(new U1Step(TYPE_WORD_BANK, "Traduce esta oración", "Toca las palabras en orden", "Good morning, how are you?", "Buenos días ¿cómo estás?", "Buenos", "días", "¿cómo", "estás?", "gracias", "hola", "bien"));
+            s.add(new U1Step(TYPE_ORDER, "Ordena la frase", "Forma la frase correcta", "Nice to meet you", "Nice to meet you", "you", "meet", "Nice", "to"));
+            s.add(new U1Step(TYPE_FILL, "Escribe en inglés", "Traduce: Hola", "Hello", "Hello"));
+            s.add(new U1Step(TYPE_SPEAK, "Repite en voz alta", "Escucha y repite", "Good evening", "Good evening"));
+        } else if (lesson == 1) {
+            s.add(new U1Step(TYPE_LISTEN_CHOICE, "Escucha y elige", "Selecciona la traducción correcta", "Where are you from?", "¿De dónde eres?", "¿De dónde eres?", "¿Cómo te llamas?", "¿Dónde vives?", "¿Cómo estás?"));
+            s.add(new U1Step(TYPE_WORD_BANK, "Traduce esta oración", "Toca las palabras en orden", "I am from France", "Yo soy de Francia", "Yo", "soy", "de", "Francia", "España", "Italia"));
+            s.add(new U1Step(TYPE_ORDER, "Ordena la frase", "Traduce: Soy de España", "I am from Spain", "I am from Spain", "Spain", "from", "I", "am"));
+            s.add(new U1Step(TYPE_FILL, "Escribe en inglés", "Traduce: Soy de Inglaterra", "I am from England", "I am from England"));
+            s.add(new U1Step(TYPE_SPEAK, "Repite en voz alta", "Escucha y repite", "I am from Germany", "I am from Germany"));
+        } else {
+            s.add(new U1Step(TYPE_LISTEN_CHOICE, "Escucha y elige el número", "¿Qué número escuchaste?", "Three", "3", "1", "3", "5", "7"));
+            s.add(new U1Step(TYPE_CHOICE, "Elige la palabra", "¿Cómo se dice 5 en inglés?", "Five", "Five", "Four", "Five", "Seven", "Two"));
+            s.add(new U1Step(TYPE_FILL, "Escribe el número", "Escribe 7 en inglés", "Seven", "Seven"));
+            s.add(new U1Step(TYPE_ORDER, "Ordena las letras", "Forma el número 10", "Ten", "Ten", "T", "e", "n"));
+            s.add(new U1Step(TYPE_SPEAK, "Repite en voz alta", "Escucha y repite", "Nine", "Nine"));
+        }
+        return s;
+    }
+
+    private String unitOneLessonName(int lesson) {
+        return lesson == 0 ? "Saludos en inglés" : lesson == 1 ? "Di de dónde eres" : "Números del 1 al 10";
+    }
+
+    private void startUnitOneLesson(int lesson) {
+        showUnitOneIntro(lesson);
+    }
+
+    private void showUnitOneIntro(int lesson) {
+        currentSection = "practice";
+        ScrollView scroll = new ScrollView(this);
+        LinearLayout box = verticalBox();
+        box.setPadding(dp(18), dp(18), dp(18), dp(28));
+        box.setBackgroundColor(Color.rgb(232,248,255));
+        scroll.addView(box);
+
+        TextView close = heading("✕", 30, Color.WHITE);
+        close.setGravity(Gravity.CENTER);
+        close.setBackground(rounded(BLUE, Color.rgb(94,202,255), 18));
+        close.setOnClickListener(v -> showPath());
+        box.addView(close, new LinearLayout.LayoutParams(dp(58), dp(58)));
+        box.addView(spacer(14));
+
+        LinearLayout hero = card();
+        hero.setBackground(rounded(Color.WHITE, Color.rgb(173,221,249), 28));
+        hero.addView(label("UNIDAD 1 · LECCIÓN " + (lesson + 1), BLUE));
+        hero.addView(heading(unitOneLessonName(lesson), 28, BLUE_DARK));
+        hero.addView(body(lesson == 0 ? "Aprende saludos cotidianos y practica cómo suenan." : lesson == 1 ? "Pregunta y responde de qué país europeo eres." : "Reconoce, escribe y pronuncia los números básicos."));
+        TextView character = heading(lesson == 0 ? "👩‍🎓  👋  🇬🇧" : lesson == 1 ? "👩‍🎓  🌍  🇫🇷 🇪🇸 🇬🇧" : "👩‍🎓  🔢  1 2 3", 24, BLUE_DARK);
+        character.setGravity(Gravity.CENTER);
+        hero.addView(character);
+        box.addView(hero);
+        box.addView(spacer(14));
+        box.addView(primaryGreenButton("COMENZAR LECCIÓN  ›", () -> renderUnitOneStep(lesson, 0, 0)));
+        setContent(scroll);
+    }
+
+    private Button primaryGreenButton(String text, Runnable action) {
+        Button b = new Button(this);
+        b.setText(text);
+        b.setAllCaps(false);
+        b.setTextColor(BLUE_DARK);
+        b.setTextSize(17);
+        b.setTypeface(Typeface.DEFAULT_BOLD);
+        GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{Color.rgb(133,244,45), Color.rgb(73,218,31)});
+        g.setCornerRadius(dp(22));
+        g.setStroke(dp(2), Color.rgb(56,186,23));
+        b.setBackground(g);
+        b.setElevation(dp(7));
+        b.setOnClickListener(v -> {
+            b.animate().scaleX(.96f).scaleY(.96f).setDuration(80).withEndAction(() -> {
+                b.animate().scaleX(1f).scaleY(1f).setDuration(100).start(); action.run();
+            }).start();
+        });
+        return b;
+    }
+
+    private void renderUnitOneStep(int lesson, int position, int score) {
+        List<U1Step> steps = unitOneSteps(lesson);
+        if (position >= steps.size()) {
+            completeUnitOneLesson(lesson, score, steps.size());
+            return;
+        }
+        U1Step step = steps.get(position);
+        ScrollView scroll = new ScrollView(this);
+        LinearLayout root = verticalBox();
+        root.setPadding(dp(14), dp(10), dp(14), dp(24));
+        root.setBackgroundColor(Color.rgb(231,248,255));
+        scroll.addView(root);
+
+        LinearLayout top = horizontal();
+        Button close = smallButton("✕", this::showPath);
+        close.setTextSize(22);
+        close.setTextColor(Color.WHITE);
+        close.setBackground(rounded(BLUE, Color.rgb(93,201,255), 16));
+        top.addView(close, new LinearLayout.LayoutParams(dp(58), dp(52)));
+        ProgressBar progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        progress.setMax(steps.size()); progress.setProgress(position + 1);
+        progress.setProgressTintList(android.content.res.ColorStateList.valueOf(Color.rgb(110,232,39)));
+        LinearLayout.LayoutParams pp = new LinearLayout.LayoutParams(0, dp(18), 1f); pp.setMargins(dp(10),0,dp(10),0);
+        top.addView(progress, pp);
+        TextView hearts = heading("🔥 " + prefs.getInt(KEY_STREAK,1) + "   ❤️ " + prefs.getInt(KEY_LIVES,5), 14, Color.WHITE);
+        hearts.setGravity(Gravity.CENTER);
+        hearts.setBackground(rounded(BLUE, Color.rgb(89,197,247), 16));
+        top.addView(hearts, new LinearLayout.LayoutParams(dp(120), dp(52)));
+        root.addView(top);
+        root.addView(spacer(12));
+
+        LinearLayout titleCard = card();
+        titleCard.setBackground(rounded(Color.WHITE, Color.rgb(176,222,246), 24));
+        titleCard.addView(label(unitOneLessonName(lesson), BLUE));
+        titleCard.addView(heading(step.title, 25, BLUE_DARK));
+        titleCard.addView(body(step.prompt));
+        root.addView(titleCard);
+
+        LinearLayout scene = card();
+        scene.setBackground(rounded(Color.rgb(245,252,255), Color.rgb(167,220,249), 26));
+        TextView girl = heading(lesson == 0 ? "👩‍🎓  👋      🇬🇧  🕰️" : lesson == 1 ? "👩‍🎓  🌍      🇫🇷  🇪🇸  🇬🇧" : "👩‍🎓  🔢      1️⃣ 2️⃣ 3️⃣", 23, BLUE_DARK);
+        girl.setGravity(Gravity.CENTER);
+        scene.addView(girl);
+        LinearLayout bubble = horizontal();
+        bubble.setGravity(Gravity.CENTER_VERTICAL);
+        Button speaker = smallButton("🔊", () -> speakNative(step.english));
+        speaker.setTextSize(25);
+        speaker.setBackground(rounded(Color.rgb(227,246,255), Color.rgb(83,184,240), 18));
+        bubble.addView(speaker, new LinearLayout.LayoutParams(dp(68), dp(60)));
+        TextView phrase = heading(step.english, 19, BLUE_DARK);
+        phrase.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams ph = new LinearLayout.LayoutParams(0, dp(60), 1f); ph.setMargins(dp(8),0,0,0);
+        bubble.addView(phrase, ph);
+        scene.addView(bubble);
+        root.addView(scene);
+        root.addView(spacer(10));
+
+        LinearLayout answerArea = card();
+        answerArea.setBackground(rounded(Color.argb(238,255,255,255), Color.rgb(190,224,244), 24));
+        if (step.type == TYPE_LISTEN_CHOICE || step.type == TYPE_CHOICE) {
+            for (String opt : step.options) {
+                Button b = secondaryButton(opt, () -> evaluateU1Answer(lesson, position, score, step, opt));
+                b.setTextSize(16); b.setMinHeight(dp(54));
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(56)); lp.setMargins(0,dp(4),0,dp(4));
+                answerArea.addView(b, lp);
+            }
+        } else if (step.type == TYPE_FILL) {
+            EditText input = new EditText(this);
+            input.setHint("Escribe tu respuesta..."); input.setTextSize(18); input.setTextColor(BLUE_DARK); input.setPadding(dp(16),0,dp(16),0);
+            input.setBackground(rounded(Color.WHITE, Color.rgb(154,207,240), 17));
+            answerArea.addView(input, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(62)));
+            answerArea.addView(spacer(10));
+            answerArea.addView(primaryGreenButton("COMPROBAR", () -> evaluateU1Answer(lesson, position, score, step, input.getText().toString())));
+        } else if (step.type == TYPE_WORD_BANK || step.type == TYPE_ORDER) {
+            final List<String> chosen = new ArrayList<>();
+            TextView result = body("Tu respuesta aparecerá aquí");
+            result.setGravity(Gravity.CENTER); result.setTextSize(18); result.setTextColor(BLUE_DARK);
+            result.setBackground(rounded(Color.rgb(248,252,255), Color.rgb(165,207,238), 16));
+            answerArea.addView(result, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(66)));
+            GridLayout grid = new GridLayout(this); grid.setColumnCount(2); grid.setUseDefaultMargins(true);
+            for (String opt : step.options) {
+                Button b = smallButton(opt, () -> {});
+                b.setTextSize(15); b.setMinHeight(dp(48));
+                b.setOnClickListener(v -> { chosen.add(opt); b.setEnabled(false); result.setText(joinWords(chosen)); });
+                grid.addView(b, new GridLayout.LayoutParams());
+            }
+            answerArea.addView(grid);
+            answerArea.addView(primaryGreenButton("COMPROBAR", () -> evaluateU1Answer(lesson, position, score, step, joinWords(chosen))));
+        } else if (step.type == TYPE_SPEAK) {
+            TextView status = heading("🎙️ Toca el micrófono y repite la frase", 17, BLUE_DARK); status.setGravity(Gravity.CENTER);
+            answerArea.addView(status);
+            Button mic = primaryButton("🎤  USAR MICRÓFONO", () -> startSpeechRecognition(step.answer, status, false, (speechScore, heard) -> {
+                boolean ok = speechScore >= 65;
+                showU1Feedback(lesson, position, score, step, ok, heard);
+            }));
+            mic.setTextSize(17); mic.setBackground(rounded(BLUE, Color.rgb(80,188,245), 22));
+            answerArea.addView(mic, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(66)));
+            answerArea.addView(spacer(8));
+            answerArea.addView(secondaryButton("🔊 ESCUCHAR OTRA VEZ", () -> speakNative(step.english)));
+        }
+        root.addView(answerArea);
+        setContent(scroll);
+    }
+
+    private String joinWords(List<String> words) {
+        StringBuilder sb = new StringBuilder();
+        for (String w : words) { if (sb.length() > 0) sb.append(' '); sb.append(w); }
+        return sb.toString();
+    }
+
+    private void evaluateU1Answer(int lesson, int position, int score, U1Step step, String given) {
+        boolean ok = normalizeAnswer(given).equals(normalizeAnswer(step.answer));
+        showU1Feedback(lesson, position, score, step, ok, given);
+    }
+
+    private void showU1Feedback(int lesson, int position, int score, U1Step step, boolean correct, String given) {
+        if (correct) addXp(10);
+        ScrollView scroll = new ScrollView(this);
+        LinearLayout root = verticalBox(); root.setPadding(dp(18),dp(30),dp(18),dp(30));
+        root.setBackgroundColor(correct ? Color.rgb(235,255,239) : Color.rgb(255,240,241));
+        scroll.addView(root);
+        TextView symbol = heading(correct ? "✓" : "✕", 54, Color.WHITE); symbol.setGravity(Gravity.CENTER);
+        GradientDrawable circle = new GradientDrawable(); circle.setShape(GradientDrawable.OVAL); circle.setColor(correct ? GREEN : RED);
+        symbol.setBackground(circle); LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(dp(100),dp(100)); sp.gravity=Gravity.CENTER_HORIZONTAL; root.addView(symbol,sp);
+        root.addView(spacer(18));
+        TextView title = heading(correct ? "¡Correcto!" : "Incorrecto", 30, correct ? GREEN_DARK : RED); title.setGravity(Gravity.CENTER); root.addView(title);
+        if (correct) {
+            TextView xp = heading("+10 XP", 22, ORANGE); xp.setGravity(Gravity.CENTER); root.addView(xp);
+        } else {
+            TextView ans = heading("Respuesta correcta:", 16, RED); root.addView(ans);
+        }
+        LinearLayout phrase = horizontal(); phrase.setGravity(Gravity.CENTER_VERTICAL); phrase.setPadding(dp(14),dp(12),dp(14),dp(12)); phrase.setBackground(rounded(Color.WHITE, BORDER, 18));
+        Button sound = smallButton("🔊", () -> speakNative(step.english)); sound.setTextSize(24); phrase.addView(sound,new LinearLayout.LayoutParams(dp(62),dp(56)));
+        TextView phraseText = heading(step.answer, 18, BLUE_DARK); phrase.addView(phraseText,new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f)); root.addView(phrase);
+        if (!correct && given != null && !given.trim().isEmpty()) root.addView(body("Tu respuesta: " + given));
+        root.addView(spacer(14));
+        root.addView(primaryGreenButton(correct ? "SIGUIENTE" : "ENTENDIDO · CONTINUAR", () -> renderUnitOneStep(lesson, position + 1, score + (correct ? 1 : 0))));
+        setContent(scroll);
+    }
+
+    private void completeUnitOneLesson(int lesson, int score, int total) {
+        prefs.edit().putBoolean("u1_done_" + lesson, true).apply();
+        addXp(25);
+        ScrollView scroll = new ScrollView(this);
+        LinearLayout root = verticalBox(); root.setPadding(dp(18),dp(26),dp(18),dp(30)); root.setBackgroundColor(Color.rgb(232,248,255)); scroll.addView(root);
+        TextView trophy = heading("🏆", 66, ORANGE); trophy.setGravity(Gravity.CENTER); root.addView(trophy);
+        TextView done = heading("¡Lección completada!", 29, BLUE_DARK); done.setGravity(Gravity.CENTER); root.addView(done);
+        TextView name = heading(unitOneLessonName(lesson), 20, BLUE); name.setGravity(Gravity.CENTER); root.addView(name);
+        LinearLayout stats = card(); stats.addView(heading(score + " / " + total + " correctas", 20, GREEN_DARK)); stats.addView(heading("+25 XP de finalización", 18, ORANGE)); stats.addView(body("Puedes repetir la lección cuando quieras desde la ruta.")); root.addView(stats);
+        root.addView(primaryGreenButton(lesson < 2 ? "DESBLOQUEAR SIGUIENTE  ›" : "IR AL EXAMEN  ›", () -> { if (lesson < 2) showPath(); else startUnitOneExam(); }));
+        setContent(scroll);
+    }
+
+    private void startUnitOneExam() {
+        List<U1Step> exam = new ArrayList<>();
+        exam.add(new U1Step(TYPE_CHOICE,"Examen · 1/6","¿Qué significa Good morning?","Good morning","Buenos días","Buenos días","Buenas tardes","Adiós"));
+        exam.add(new U1Step(TYPE_CHOICE,"Examen · 2/6","¿Qué significa Where are you from?","Where are you from?","¿De dónde eres?","¿Dónde estás?","¿Cómo estás?"));
+        exam.add(new U1Step(TYPE_FILL,"Examen · 3/6","Traduce: Soy de Francia","I am from France","I am from France"));
+        exam.add(new U1Step(TYPE_CHOICE,"Examen · 4/6","¿Cómo se dice 8?","Eight","Eight","Five","Nine"));
+        exam.add(new U1Step(TYPE_FILL,"Examen · 5/6","Escribe 10 en inglés","Ten","Ten"));
+        exam.add(new U1Step(TYPE_SPEAK,"Examen · 6/6","Pronuncia la frase","I am from Spain","I am from Spain"));
+        renderUnitOneExamStep(exam,0,0);
+    }
+
+    private void renderUnitOneExamStep(List<U1Step> exam, int pos, int score) {
+        if (pos >= exam.size()) { finishUnitOneExam(score, exam.size()); return; }
+        U1Step st=exam.get(pos);
+        ScrollView scroll=new ScrollView(this); LinearLayout root=verticalBox(); root.setPadding(dp(16),dp(14),dp(16),dp(26)); root.setBackgroundColor(Color.rgb(239,249,255)); scroll.addView(root);
+        root.addView(label("EXAMEN DE UNIDAD 1", ORANGE)); root.addView(heading(st.title,22,BLUE_DARK)); root.addView(body(st.prompt));
+        Button audio=primaryButton("🔊  ESCUCHAR",()->speakNative(st.english)); root.addView(audio,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,dp(58))); root.addView(spacer(12));
+        if(st.type==TYPE_CHOICE){ for(String opt:st.options){ Button b=secondaryButton(opt,()->{boolean ok=normalizeAnswer(opt).equals(normalizeAnswer(st.answer)); renderUnitOneExamStep(exam,pos+1,score+(ok?1:0));}); root.addView(b,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,dp(56))); root.addView(spacer(6)); }}
+        else if(st.type==TYPE_FILL){ EditText e=new EditText(this); e.setHint("Escribe tu respuesta..."); e.setTextSize(18); e.setBackground(rounded(Color.WHITE,Color.rgb(151,207,240),18)); e.setPadding(dp(16),0,dp(16),0); root.addView(e,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,dp(62))); root.addView(spacer(10)); root.addView(primaryGreenButton("COMPROBAR",()->{boolean ok=normalizeAnswer(e.getText().toString()).equals(normalizeAnswer(st.answer)); renderUnitOneExamStep(exam,pos+1,score+(ok?1:0));})); }
+        else { TextView status=heading("🎙️ Repite la frase",18,BLUE_DARK); status.setGravity(Gravity.CENTER); root.addView(status); root.addView(primaryGreenButton("USAR MICRÓFONO",()->startSpeechRecognition(st.answer,status,false,(speechScore,heard)->renderUnitOneExamStep(exam,pos+1,score+(speechScore>=65?1:0)))) ; }
+        setContent(scroll);
+    }
+
+    private void finishUnitOneExam(int score,int total){
+        boolean pass=score>=4; if(pass){prefs.edit().putBoolean("u1_exam_passed",true).apply(); addXp(100);} ScrollView scroll=new ScrollView(this); LinearLayout root=verticalBox(); root.setPadding(dp(18),dp(28),dp(18),dp(30)); root.setBackgroundColor(pass?Color.rgb(235,253,242):Color.rgb(255,247,235)); scroll.addView(root);
+        TextView icon=heading(pass?"🏆":"📚",68,ORANGE); icon.setGravity(Gravity.CENTER); root.addView(icon); TextView title=heading(pass?"¡Unidad 1 completada!":"Casi lo tienes",30,BLUE_DARK); title.setGravity(Gravity.CENTER); root.addView(title); TextView result=heading(score+" / "+total+" correctas",22,pass?GREEN_DARK:ORANGE); result.setGravity(Gravity.CENTER); root.addView(result); root.addView(body(pass?"Has dominado saludos, países europeos y números del 1 al 10. +100 XP":"Necesitas al menos 4 respuestas correctas. Repasa y vuelve a intentarlo.")); root.addView(primaryGreenButton(pass?"CONTINUAR A LA RUTA":"REINTENTAR EXAMEN",pass?this::showPath:this::startUnitOneExam)); setContent(scroll);
     }
 
     private View dailyGoalCard() {

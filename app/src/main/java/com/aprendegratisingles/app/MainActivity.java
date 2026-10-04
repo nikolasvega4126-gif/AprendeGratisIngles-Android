@@ -109,6 +109,8 @@ public class MainActivity extends Activity {
     private static final String KEY_PRON_GOOD = "pron_good";
     private static final String VOCAB_STAGE_PREFIX = "vocab_stage_";
     private static final String VOCAB_DUE_PREFIX = "vocab_due_";
+    private static final String XP_DAY_PREFIX = "xp_day_";
+    private static final String MISSION_CLAIMS_PREFIX = "mission_claims_";
     private static final int REQ_EXPORT = 7201;
     private static final int REQ_IMPORT = 7202;
 
@@ -417,7 +419,7 @@ public class MainActivity extends Activity {
         root.addView(spacer(16));
 
         EditText username = new EditText(this);
-        username.setHint("@Usuario");
+        username.setHint("@Joshuar");
         username.setSingleLine(true);
         username.setTextSize(18);
         username.setTextColor(BLUE_DARK);
@@ -462,7 +464,7 @@ public class MainActivity extends Activity {
 
         ScrollView scroll = new ScrollView(this);
         scroll.addView(root);
-        setScreenContent(scroll);
+        setContentView(scroll);
     }
 
     private String cleanUsername(String raw) {
@@ -475,7 +477,7 @@ public class MainActivity extends Activity {
 
     private String avatarForUsername(String username) {
         if (username == null || username.isEmpty()) return USER_AVATARS[0];
-        int index = Math.floorMod(username.toLowerCase(Locale.ROOT).hashCode(), USER_AVATARS.length);
+        int index = Math.abs(username.toLowerCase(Locale.ROOT).hashCode()) % USER_AVATARS.length;
         return USER_AVATARS[index];
     }
 
@@ -597,7 +599,7 @@ public class MainActivity extends Activity {
 
         ScrollView scroll = new ScrollView(this);
         scroll.addView(root);
-        setScreenContent(scroll);
+        setContentView(scroll);
     }
 
     private Button optionButton(String text, boolean selected, Runnable action) {
@@ -739,7 +741,7 @@ public class MainActivity extends Activity {
         navLp.setMargins(dp(10), dp(2), dp(10), dp(10));
         root.addView(bottomNav, navLp);
 
-        setScreenContent(root);
+        setContentView(root);
         refreshBottomNav();
         updateHeaderStats();
     }
@@ -854,6 +856,12 @@ public class MainActivity extends Activity {
 
         box.addView(dailyGoalCard());
         box.addView(spacer(8));
+        box.addView(smartCoachCard());
+        box.addView(spacer(8));
+        box.addView(dailyMissionsCard());
+        box.addView(spacer(8));
+        box.addView(weeklyXpCard());
+        box.addView(spacer(8));
 
         List<PostItem> ordered = getOrderedPosts();
         if (ordered.isEmpty()) {
@@ -914,6 +922,192 @@ public class MainActivity extends Activity {
         c.addView(bar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(12)));
         c.addView(body(pct >= 100 ? "✓ Meta diaria completada" : "Completa lecciones o práctica para llenar tu meta diaria."));
         return c;
+    }
+
+
+    private View smartCoachCard() {
+        LinearLayout c = card();
+        c.setBackground(rounded(Color.rgb(244, 250, 255), Color.rgb(199, 226, 248), 22));
+        c.addView(label("COACH V6", BLUE));
+        c.addView(heading("Tu siguiente mejor paso", 21, BLUE_DARK));
+
+        int errors = errorSet().size();
+        int dueWords = countDueVocabulary();
+        Runnable action;
+        String title;
+        String description;
+        String button;
+
+        if (errors > 0) {
+            title = "Corrige primero tus errores";
+            description = "Tienes " + errors + " concepto(s) débiles. El repaso inteligente los prioriza antes de añadir dificultad.";
+            button = "↻ Repasar errores";
+            action = () -> showQuiz(true);
+        } else if (dueWords > 0) {
+            title = "Refuerza tu memoria";
+            description = "Tienes " + dueWords + " palabra(s) listas para repetición espaciada.";
+            button = "🧠 Repasar vocabulario";
+            action = this::showSpacedReview;
+        } else {
+            PostItem next = recommendedPost();
+            if (next != null) {
+                title = "Continúa tu ruta";
+                description = "Tu progreso está al día. La mejor acción ahora es avanzar a: " + next.title;
+                button = "▶ Continuar lección";
+                action = () -> openPost(next);
+            } else {
+                title = "Reto rápido";
+                description = "No hay pendientes urgentes. Haz 5 ejercicios adaptados para mantener activa la memoria.";
+                button = "⚡ Reto de 5";
+                action = this::startQuickPractice;
+            }
+        }
+
+        c.addView(heading(title, 18, BLUE_DARK));
+        c.addView(body(description));
+        c.addView(primaryButton(button, action));
+        return c;
+    }
+
+    private int countDueVocabulary() {
+        int count = 0;
+        long now = System.currentTimeMillis();
+        for (int i = 0; i < VOCABULARY.length; i++) {
+            long due = prefs.getLong(VOCAB_DUE_PREFIX + i, 0L);
+            if (due == 0L || due <= now) count++;
+        }
+        return count;
+    }
+
+    private PostItem recommendedPost() {
+        List<PostItem> ordered = getOrderedPosts();
+        if (ordered.isEmpty()) return null;
+        int startIndex = Math.min(prefs.getInt(KEY_START_INDEX, 0), Math.max(0, ordered.size() - 1));
+        int current = findCurrentPathIndex(ordered, startIndex);
+        if (current >= 0 && current < ordered.size()) return ordered.get(current);
+        Set<String> done = completedSet();
+        for (PostItem p : ordered) if (!done.contains(p.url)) return p;
+        return null;
+    }
+
+    private void startQuickPractice() {
+        List<Integer> full = buildPracticeSession(false);
+        if (full.isEmpty()) {
+            showQuiz(false);
+            return;
+        }
+        List<Integer> quick = new ArrayList<>();
+        for (int i = 0; i < full.size() && i < 5; i++) quick.add(full.get(i));
+        renderPracticeQuestion(quick, 0, 0, false, System.currentTimeMillis());
+    }
+
+    private View dailyMissionsCard() {
+        ensureDayState();
+        LinearLayout c = card();
+        c.addView(label("RETOS DIARIOS", ORANGE));
+        c.addView(heading("3 misiones para hoy", 21, BLUE_DARK));
+        c.addView(body("Completa objetivos cortos y recoge XP extra. Las recompensas se reinician cada día."));
+
+        int today = prefs.getInt(KEY_TODAY_XP, 0);
+        int goal = dailyXpGoal();
+        int[] thresholds = {30, 60, goal};
+        int[] rewards = {5, 10, 20};
+        String[] names = {"Calentamiento", "Buen ritmo", "Meta del día"};
+
+        Set<String> claims = missionClaims();
+        for (int i = 0; i < thresholds.length; i++) {
+            c.addView(missionRow(i, names[i], thresholds[i], rewards[i], today, claims.contains(String.valueOf(i))));
+        }
+        return c;
+    }
+
+    private View missionRow(int index, String title, int threshold, int reward, int todayXp, boolean claimed) {
+        LinearLayout row = horizontal();
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(0, dp(7), 0, dp(7));
+
+        TextView icon = new TextView(this);
+        boolean reached = todayXp >= threshold;
+        icon.setText(claimed ? "✅" : reached ? "🎁" : "○");
+        icon.setTextSize(23);
+        icon.setGravity(Gravity.CENTER);
+        row.addView(icon, new LinearLayout.LayoutParams(dp(44), dp(44)));
+
+        LinearLayout text = verticalBox();
+        text.addView(heading(title, 16, reached ? BLUE_DARK : MUTED));
+        text.addView(body(Math.min(todayXp, threshold) + " / " + threshold + " XP · premio +" + reward + " XP"));
+        row.addView(text, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        Button b = smallButton(claimed ? "✓" : reached ? "+" + reward : "🔒", () -> claimDailyMission(index, threshold, reward));
+        b.setEnabled(reached && !claimed);
+        row.addView(b, new LinearLayout.LayoutParams(dp(66), dp(42)));
+        return row;
+    }
+
+    private Set<String> missionClaims() {
+        String key = MISSION_CLAIMS_PREFIX + dayKey(0);
+        return new HashSet<>(prefs.getStringSet(key, Collections.emptySet()));
+    }
+
+    private void claimDailyMission(int index, int threshold, int reward) {
+        ensureDayState();
+        if (prefs.getInt(KEY_TODAY_XP, 0) < threshold) return;
+        String key = MISSION_CLAIMS_PREFIX + dayKey(0);
+        Set<String> claims = new HashSet<>(prefs.getStringSet(key, Collections.emptySet()));
+        String id = String.valueOf(index);
+        if (claims.contains(id)) return;
+        claims.add(id);
+        prefs.edit().putStringSet(key, new HashSet<>(claims)).apply();
+        awardXp(reward);
+        Toast.makeText(this, "🎁 Misión completada · +" + reward + " XP", Toast.LENGTH_SHORT).show();
+        showPath();
+    }
+
+    private View weeklyXpCard() {
+        LinearLayout c = card();
+        c.addView(label("ÚLTIMOS 7 DÍAS", PURPLE));
+        int total = 0;
+        LinearLayout days = horizontal();
+        for (int offset = -6; offset <= 0; offset++) {
+            int xp = xpForDay(offset);
+            total += xp;
+            Calendar day = Calendar.getInstance();
+            day.add(Calendar.DAY_OF_YEAR, offset);
+
+            LinearLayout d = verticalBox();
+            d.setGravity(Gravity.CENTER);
+            TextView name = label(dayLetter(day), offset == 0 ? BLUE : MUTED);
+            name.setGravity(Gravity.CENTER);
+            d.addView(name);
+            TextView value = heading(String.valueOf(xp), 14, xp > 0 ? GREEN_DARK : MUTED);
+            value.setGravity(Gravity.CENTER);
+            d.addView(value);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(56), 1f);
+            if (offset > -6) lp.setMargins(dp(2), 0, 0, 0);
+            days.addView(d, lp);
+        }
+        c.addView(heading(total + " XP esta semana", 21, BLUE_DARK));
+        c.addView(days);
+        c.addView(body("Cada columna muestra el XP registrado ese día. El historial empieza a llenarse desde V6."));
+        return c;
+    }
+
+    private int xpForDay(int offsetDays) {
+        String key = XP_DAY_PREFIX + dayKey(offsetDays);
+        int stored = prefs.getInt(key, 0);
+        if (offsetDays == 0) return Math.max(stored, prefs.getInt(KEY_TODAY_XP, 0));
+        return stored;
+    }
+
+    private String dayLetter(Calendar c) {
+        int d = c.get(Calendar.DAY_OF_WEEK);
+        if (d == Calendar.MONDAY) return "L";
+        if (d == Calendar.TUESDAY) return "M";
+        if (d == Calendar.WEDNESDAY) return "X";
+        if (d == Calendar.THURSDAY) return "J";
+        if (d == Calendar.FRIDAY) return "V";
+        if (d == Calendar.SATURDAY) return "S";
+        return "D";
     }
 
     private View pathNode(PostItem p, int index, boolean completed, boolean placementPassed, boolean current, boolean locked) {
@@ -1055,6 +1249,13 @@ public class MainActivity extends Activity {
         smart.addView(primaryButton("🧠 Empezar sesión", () -> showQuiz(false)));
         box.addView(smart);
 
+        LinearLayout quick = card();
+        quick.addView(label("RETO RÁPIDO V6", ORANGE));
+        quick.addView(heading("5 preguntas · pocos minutos", 21, BLUE_DARK));
+        quick.addView(body("Una sesión corta para cuando no quieres hacer los 10 ejercicios completos. Usa tus errores y tu unidad actual."));
+        quick.addView(primaryButton("⚡ Empezar reto de 5", this::startQuickPractice));
+        box.addView(quick);
+
         LinearLayout mistakes = card();
         int errors = errorSet().size();
         mistakes.addView(label("REPASO INTELIGENTE", RED));
@@ -1154,7 +1355,7 @@ public class MainActivity extends Activity {
 
         ScrollView scroll = new ScrollView(this);
         scroll.addView(root);
-        setScreenContent(scroll);
+        setContentView(scroll);
     }
 
     private void showLevelTestResult(int score) {
@@ -1206,7 +1407,7 @@ public class MainActivity extends Activity {
 
         ScrollView scroll = new ScrollView(this);
         scroll.addView(root);
-        setScreenContent(scroll);
+        setContentView(scroll);
     }
 
     private String levelTestDescription(String level) {
@@ -1966,6 +2167,7 @@ public class MainActivity extends Activity {
         stats.addView(body("📊 Sesiones: " + prefs.getInt(KEY_STUDY_SESSIONS, 0)));
         stats.addView(body("🏅 Nivel de usuario: " + userRank()));
         box.addView(stats);
+        box.addView(masteryMapCard());
 
         LinearLayout reminder = card();
         reminder.addView(label("RECORDATORIO", ORANGE));
@@ -2001,9 +2203,44 @@ public class MainActivity extends Activity {
         account.addView(secondaryButton("♥ Ver favoritos", this::showFavorites));
         account.addView(secondaryButton("🔎 Todas las lecciones", this::showAllLessons));
         account.addView(secondaryButton("↻ Configurar inicio otra vez", this::resetOnboarding));
-        account.addView(body("Versión 6.0 · Aprende Gratis Inglés"));
         box.addView(account);
         setContent(scroll);
+    }
+
+
+    private View masteryMapCard() {
+        LinearLayout c = card();
+        c.addView(label("MAPA DE DOMINIO V6", GREEN));
+        c.addView(heading("Lo que ya dominas", 21, BLUE_DARK));
+        c.addView(body("El progreso se calcula con los conceptos que has respondido correctamente en cada unidad."));
+
+        Set<String> mastered = masteredSet();
+        for (int unit = 0; unit < UNIT_NAMES.length; unit++) {
+            int total = 0;
+            int good = 0;
+            for (int i = 0; i < EXERCISES.length; i++) {
+                if (EXERCISES[i].unit == unit) {
+                    total++;
+                    if (mastered.contains(String.valueOf(i))) good++;
+                }
+            }
+            int pct = total == 0 ? 0 : Math.round(good * 100f / total);
+            LinearLayout row = verticalBox();
+            row.setPadding(0, dp(7), 0, dp(7));
+            LinearLayout titleRow = horizontal();
+            titleRow.addView(heading(UNIT_NAMES[unit], 15, BLUE_DARK), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+            TextView score = body(good + "/" + total + " · " + pct + "%");
+            score.setGravity(Gravity.END);
+            titleRow.addView(score, new LinearLayout.LayoutParams(dp(105), ViewGroup.LayoutParams.WRAP_CONTENT));
+            row.addView(titleRow);
+            ProgressBar bar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+            bar.setMax(100);
+            bar.setProgress(pct);
+            bar.setProgressTintList(android.content.res.ColorStateList.valueOf(pct >= 80 ? GREEN : pct >= 40 ? BLUE : ORANGE));
+            row.addView(bar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(9)));
+            c.addView(row);
+        }
+        return c;
     }
 
     private void resetOnboarding() {
@@ -2427,14 +2664,25 @@ public class MainActivity extends Activity {
                     .putInt(KEY_TODAY_XP, 0)
                     .putInt(KEY_LIVES, 5)
                     .apply();
+        } else {
+            int current = prefs.getInt(KEY_TODAY_XP, 0);
+            String key = XP_DAY_PREFIX + today;
+            if (current > prefs.getInt(key, 0)) prefs.edit().putInt(key, current).apply();
         }
     }
 
     private void awardXp(int amount) {
         ensureDayState();
+        int previousToday = prefs.getInt(KEY_TODAY_XP, 0);
         int total = prefs.getInt(KEY_XP, 0) + amount;
-        int today = prefs.getInt(KEY_TODAY_XP, 0) + amount;
-        prefs.edit().putInt(KEY_XP, total).putInt(KEY_TODAY_XP, today).apply();
+        int today = previousToday + amount;
+        String dayXpKey = XP_DAY_PREFIX + dayKey(0);
+        int tracked = Math.max(prefs.getInt(dayXpKey, 0), previousToday) + amount;
+        prefs.edit()
+                .putInt(KEY_XP, total)
+                .putInt(KEY_TODAY_XP, today)
+                .putInt(dayXpKey, Math.max(today, tracked))
+                .apply();
         updateHeaderStats();
     }
 
@@ -2938,7 +3186,7 @@ public class MainActivity extends Activity {
     private JSONObject progressAsJson() throws Exception {
         JSONObject root = new JSONObject();
         root.put("app", "Aprende gratis inglés");
-        root.put("version", "6.0");
+        root.put("version", "5.2");
         JSONObject data = new JSONObject();
         for (Map.Entry<String, ?> entry : prefs.getAll().entrySet()) {
             Object value = entry.getValue();
@@ -3027,24 +3275,6 @@ public class MainActivity extends Activity {
         c.addView(heading(title, 20, BLUE_DARK));
         c.addView(body(text));
         return c;
-    }
-
-    private void setScreenContent(View view) {
-        final int baseLeft = view.getPaddingLeft();
-        final int baseTop = view.getPaddingTop();
-        final int baseRight = view.getPaddingRight();
-        final int baseBottom = view.getPaddingBottom();
-        view.setOnApplyWindowInsetsListener((v, insets) -> {
-            v.setPadding(
-                    baseLeft + insets.getSystemWindowInsetLeft(),
-                    baseTop + insets.getSystemWindowInsetTop(),
-                    baseRight + insets.getSystemWindowInsetRight(),
-                    baseBottom + insets.getSystemWindowInsetBottom()
-            );
-            return insets;
-        });
-        setContentView(view);
-        view.requestApplyInsets();
     }
 
     private void setContent(View view) {

@@ -105,7 +105,7 @@ public class SplashActivity extends Activity {
         FrameLayout.LayoutParams centerLp = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
         root.addView(center, centerLp);
-        setScreenContent(root);
+        setContentView(root);
 
         logo.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(900).start();
         title.animate().alpha(1f).setStartDelay(450).setDuration(800).start();
@@ -119,24 +119,6 @@ public class SplashActivity extends Activity {
                 finishIntro();
             }
         });
-    }
-
-    private void setScreenContent(View view) {
-        final int baseLeft = view.getPaddingLeft();
-        final int baseTop = view.getPaddingTop();
-        final int baseRight = view.getPaddingRight();
-        final int baseBottom = view.getPaddingBottom();
-        view.setOnApplyWindowInsetsListener((v, insets) -> {
-            v.setPadding(
-                    baseLeft + insets.getSystemWindowInsetLeft(),
-                    baseTop + insets.getSystemWindowInsetTop(),
-                    baseRight + insets.getSystemWindowInsetRight(),
-                    baseBottom + insets.getSystemWindowInsetBottom()
-            );
-            return insets;
-        });
-        setContentView(view);
-        view.requestApplyInsets();
     }
 
     private GradientDrawable makeGradient() {

@@ -1196,7 +1196,7 @@ public class MainActivity extends Activity {
     }
 
     private void showU1Feedback(int lesson, int position, int score, U1Step step, boolean correct, String given) {
-        if (correct) addXp(10);
+        if (correct) awardXp(10);
         ScrollView scroll = new ScrollView(this);
         LinearLayout root = verticalBox(); root.setPadding(dp(18),dp(30),dp(18),dp(30));
         root.setBackgroundColor(correct ? Color.rgb(235,255,239) : Color.rgb(255,240,241));
@@ -1222,7 +1222,7 @@ public class MainActivity extends Activity {
 
     private void completeUnitOneLesson(int lesson, int score, int total) {
         prefs.edit().putBoolean("u1_done_" + lesson, true).apply();
-        addXp(25);
+        awardXp(25);
         ScrollView scroll = new ScrollView(this);
         LinearLayout root = verticalBox(); root.setPadding(dp(18),dp(26),dp(18),dp(30)); root.setBackgroundColor(Color.rgb(232,248,255)); scroll.addView(root);
         TextView trophy = heading("🏆", 66, ORANGE); trophy.setGravity(Gravity.CENTER); root.addView(trophy);
@@ -1266,7 +1266,7 @@ public class MainActivity extends Activity {
     }
 
     private void finishUnitOneExam(int score,int total){
-        boolean pass=score>=4; if(pass){prefs.edit().putBoolean("u1_exam_passed",true).apply(); addXp(100);} ScrollView scroll=new ScrollView(this); LinearLayout root=verticalBox(); root.setPadding(dp(18),dp(28),dp(18),dp(30)); root.setBackgroundColor(pass?Color.rgb(235,253,242):Color.rgb(255,247,235)); scroll.addView(root);
+        boolean pass=score>=4; if(pass){prefs.edit().putBoolean("u1_exam_passed",true).apply(); awardXp(100);} ScrollView scroll=new ScrollView(this); LinearLayout root=verticalBox(); root.setPadding(dp(18),dp(28),dp(18),dp(30)); root.setBackgroundColor(pass?Color.rgb(235,253,242):Color.rgb(255,247,235)); scroll.addView(root);
         TextView icon=heading(pass?"🏆":"📚",68,ORANGE); icon.setGravity(Gravity.CENTER); root.addView(icon); TextView title=heading(pass?"¡Unidad 1 completada!":"Casi lo tienes",30,BLUE_DARK); title.setGravity(Gravity.CENTER); root.addView(title); TextView result=heading(score+" / "+total+" correctas",22,pass?GREEN_DARK:ORANGE); result.setGravity(Gravity.CENTER); root.addView(result); root.addView(body(pass?"Has dominado saludos, países europeos y números del 1 al 10. +100 XP":"Necesitas al menos 4 respuestas correctas. Repasa y vuelve a intentarlo.")); root.addView(primaryGreenButton(pass?"CONTINUAR A LA RUTA":"REINTENTAR EXAMEN",pass?this::showPath:this::startUnitOneExam)); setContent(scroll);
     }
 

@@ -14,8 +14,6 @@ import android.speech.tts.TextToSpeech;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
-import android.view.WindowInsets;
-import android.view.WindowInsetsController;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -43,26 +41,38 @@ public class VisualGameActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-        hideSystemBars();
-        initTts();
+
+        // Primero construimos y mostramos la pantalla. En algunos dispositivos MIUI,
+        // manipular insets/barras antes de que exista el decorView puede cerrar la Activity.
         root = new FrameLayout(this);
         screen = new ImageView(this);
-        screen.setScaleType(ImageView.ScaleType.FIT_XY);
-        root.addView(screen, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        screen.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        root.addView(screen, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT));
         root.setOnTouchListener(this::handleTouch);
         setContentView(root);
-        showMode(MODE_ROUTE);
+
+        try {
+            showMode(MODE_ROUTE);
+        } catch (Throwable imageError) {
+            Toast.makeText(this, "No se pudo cargar el diseño visual", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+
+        // Funciones secundarias después de que la UI ya está visible.
+        root.post(() -> {
+            safeHideSystemBars();
+            initTts();
+        });
     }
 
-    private void hideSystemBars() {
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            final WindowInsetsController c = getWindow().getInsetsController();
-            if (c != null) {
-                c.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
-                c.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-            }
-        } else {
+    private void safeHideSystemBars() {
+        try {
+            requestWindowFeature(Window.FEATURE_NO_TITLE);
+        } catch (Throwable ignored) {}
+        try {
             getWindow().getDecorView().setSystemUiVisibility(
                     View.SYSTEM_UI_FLAG_FULLSCREEN |
                     View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
@@ -71,17 +81,23 @@ public class VisualGameActivity extends Activity {
                     View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
                     View.SYSTEM_UI_FLAG_LAYOUT_STABLE
             );
-        }
+        } catch (Throwable ignored) {}
     }
 
     private void initTts() {
-        tts = new TextToSpeech(this, status -> {
-            if (status == TextToSpeech.SUCCESS) {
-                tts.setLanguage(Locale.US);
-                tts.setSpeechRate(0.88f);
-                ttsReady = true;
-            }
-        });
+        try {
+            tts = new TextToSpeech(getApplicationContext(), status -> {
+                try {
+                    if (status == TextToSpeech.SUCCESS && tts != null) {
+                        tts.setLanguage(Locale.US);
+                        tts.setSpeechRate(0.88f);
+                        ttsReady = true;
+                    }
+                } catch (Throwable ignored) {}
+            });
+        } catch (Throwable ignored) {
+            ttsReady = false;
+        }
     }
 
     private void showMode(int newMode) {
@@ -182,7 +198,12 @@ public class VisualGameActivity extends Activity {
     }
 
     private void speak(String phrase) {
-        if (ttsReady) tts.speak(phrase, TextToSpeech.QUEUE_FLUSH, null, "visual_" + System.currentTimeMillis());
+        try {
+            if (ttsReady && tts != null)
+                tts.speak(phrase, TextToSpeech.QUEUE_FLUSH, null, "visual_" + System.currentTimeMillis());
+        } catch (Throwable ignored) {
+            Toast.makeText(this, "Audio no disponible", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void startListening() {

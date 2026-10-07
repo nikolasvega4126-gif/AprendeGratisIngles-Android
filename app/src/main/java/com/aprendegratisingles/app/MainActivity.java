@@ -19,6 +19,7 @@ import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,6 +33,8 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.text.InputType;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -83,6 +86,9 @@ public class MainActivity extends Activity {
     private TextView heartsText;
     private TextView checkButton;
     private TextView micButton;
+    private TextView subtitleText;
+    private View subtitleCard;
+    private String pendingAutoSpeak;
 
     private final Lesson[] lessons = new Lesson[]{
             new Lesson("Primeros pasos", "Saludos básicos y frases para comenzar", new Exercise[]{
@@ -182,9 +188,13 @@ public class MainActivity extends Activity {
         LinearLayout box = cardColumn();
         box.setGravity(Gravity.CENTER);
         box.setPadding(dp(26), dp(24), dp(26), dp(24));
-        TextView logo = label("🇬🇧", 54, BLUE_DARK, true);
-        logo.setGravity(Gravity.CENTER);
-        box.addView(logo);
+        ImageView logo = new ImageView(this);
+        logo.setImageResource(R.mipmap.ic_launcher);
+        logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        LinearLayout.LayoutParams logoLp = new LinearLayout.LayoutParams(dp(86), dp(86));
+        logoLp.gravity = Gravity.CENTER_HORIZONTAL;
+        logoLp.bottomMargin = dp(8);
+        box.addView(logo, logoLp);
         TextView title = label("Aprende Gratis Inglés", 29, BLUE_DARK, true);
         title.setGravity(Gravity.CENTER);
         box.addView(title);
@@ -339,7 +349,25 @@ public class MainActivity extends Activity {
                         tts.setLanguage(Locale.US);
                     }
                     tts.setSpeechRate(0.90f);
+                    tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                        @Override public void onStart(String utteranceId) {
+                            runOnUiThread(() -> highlightSubtitle(true));
+                        }
+
+                        @Override public void onDone(String utteranceId) {
+                            runOnUiThread(() -> highlightSubtitle(false));
+                        }
+
+                        @Override public void onError(String utteranceId) {
+                            runOnUiThread(() -> highlightSubtitle(false));
+                        }
+                    });
                     ttsReady = true;
+                    if (pendingAutoSpeak != null && !pendingAutoSpeak.trim().isEmpty()) {
+                        final String queued = pendingAutoSpeak;
+                        pendingAutoSpeak = null;
+                        runOnUiThread(() -> speak(queued, true));
+                    }
                 }
             });
         } catch (Throwable ignored) {
@@ -348,15 +376,47 @@ public class MainActivity extends Activity {
     }
 
     private void speak(String text) {
+        speak(text, false);
+    }
+
+    private void speak(String text, boolean automatic) {
+        if (text == null || text.trim().isEmpty()) return;
         if (!ttsReady || tts == null) {
-            Toast.makeText(this, "El audio todavía se está preparando", Toast.LENGTH_SHORT).show();
+            if (automatic) {
+                pendingAutoSpeak = text;
+            } else {
+                Toast.makeText(this, "El audio todavía se está preparando", Toast.LENGTH_SHORT).show();
+            }
             return;
         }
         try {
-            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "agi_" + System.currentTimeMillis());
+            pendingAutoSpeak = null;
+            String utteranceId = (automatic ? "auto_" : "manual_") + System.currentTimeMillis();
+            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId);
         } catch (Throwable ignored) {
-            Toast.makeText(this, "No pude reproducir el audio", Toast.LENGTH_SHORT).show();
+            highlightSubtitle(false);
+            if (!automatic) Toast.makeText(this, "No pude reproducir el audio", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void queueAutomaticAudio(String text) {
+        pendingAutoSpeak = text;
+        if (root == null) return;
+        root.postDelayed(() -> {
+            if (currentExercise != null && text != null && text.equals(currentExercise.english)) {
+                speak(text, true);
+            }
+        }, 420);
+    }
+
+    private void highlightSubtitle(boolean playing) {
+        if (subtitleText == null || subtitleCard == null) return;
+        subtitleText.setTextColor(playing ? BLUE : BLUE_DARK);
+        subtitleCard.animate()
+                .scaleX(playing ? 1.015f : 1f)
+                .scaleY(playing ? 1.015f : 1f)
+                .setDuration(160)
+                .start();
     }
 
     private void setRootWithArt(int drawable) {
@@ -599,9 +659,80 @@ public class MainActivity extends Activity {
         settings.setDomStorageEnabled(true);
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
-        lessonsWebView.setWebViewClient(new WebViewClient());
+        settings.setMediaPlaybackRequiresUserGesture(false);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            settings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
+        }
+        lessonsWebView.setWebChromeClient(new WebChromeClient());
+        lessonsWebView.addJavascriptInterface(new WebAudioBridge(), "AGINativeAudio");
+        lessonsWebView.setWebViewClient(new WebViewClient() {
+            @Override public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                installWebAudioBridge(view);
+            }
+        });
         lessonsWebView.loadUrl("https://www.aprendegratisingles.com/p/lecciones.html");
         page.addView(lessonsWebView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+    }
+
+    private final class WebAudioBridge {
+        @JavascriptInterface
+        public void speak(String text) {
+            if (text == null) return;
+            String clean = text.trim();
+            if (clean.isEmpty()) return;
+            if (clean.length() > 300) clean = clean.substring(0, 300);
+            final String phrase = clean;
+            runOnUiThread(() -> MainActivity.this.speak(phrase));
+        }
+    }
+
+    private void installWebAudioBridge(WebView view) {
+        if (view == null) return;
+        String js =
+                "(function(){" +
+                "try{" +
+                "if(window.__agiBridgeInstalled){return;}" +
+                "window.__agiBridgeInstalled=true;" +
+                "window.__agiNativeSpoke=false;" +
+                "function agiSpeak(t){try{t=String(t||'').trim();if(!t)return;window.__agiNativeSpoke=true;AGINativeAudio.speak(t);}catch(e){}}" +
+                "try{" +
+                "if(window.speechSynthesis && typeof window.speechSynthesis.speak==='function'){" +
+                "var originalSpeak=window.speechSynthesis.speak.bind(window.speechSynthesis);" +
+                "window.speechSynthesis.speak=function(u){" +
+                "try{var t=(u&&u.text)?u.text:'';if(t){agiSpeak(t);return;}}catch(e){}" +
+                "try{return originalSpeak(u);}catch(e){}" +
+                "};" +
+                "}" +
+                "}catch(e){}" +
+                "document.addEventListener('click',function(ev){" +
+                "try{" +
+                "var el=ev.target;" +
+                "for(var i=0;i<4 && el;i++,el=el.parentElement){" +
+                "var tx=((el.innerText||el.textContent||'')+'').trim();" +
+                "var low=tx.toLowerCase();" +
+                "if(low==='escuchar' || low.indexOf('🔊')>=0 || low.indexOf('escuchar')>=0){" +
+                "window.__agiNativeSpoke=false;" +
+                "(function(btn){" +
+                "setTimeout(function(){" +
+                "if(window.__agiNativeSpoke)return;" +
+                "var node=btn;" +
+                "for(var d=0;d<4 && node;d++,node=node.parentElement){" +
+                "var attrs=['data-text','data-word','data-phrase','data-audio-text','data-pronunciation'];" +
+                "for(var a=0;a<attrs.length;a++){var v=node.getAttribute&&node.getAttribute(attrs[a]);if(v&&v.length<250){agiSpeak(v);return;}}" +
+                "var cand=node.querySelector&&node.querySelector('.english,.phrase,.word,.pronunciation,[data-english],[lang=en]');" +
+                "if(cand){var c=(cand.getAttribute&&cand.getAttribute('data-english'))||(cand.innerText||cand.textContent||'');c=String(c).trim();if(c&&c.length<250&&c.toLowerCase().indexOf('escuchar')<0){agiSpeak(c);return;}}" +
+                "}" +
+                "},180);" +
+                "})(el);" +
+                "break;" +
+                "}" +
+                "}" +
+                "}catch(e){}" +
+                "},true);" +
+                "}catch(e){}" +
+                "})();";
+        view.evaluateJavascript(js, null);
     }
 
     private void showLeague() {
@@ -845,11 +976,32 @@ public class MainActivity extends Activity {
         workScroll.addView(work);
         page.addView(workScroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
-        TextView speech = label("🔊   " + currentExercise.english, 22, BLUE_DARK, true);
+        LinearLayout speech = new LinearLayout(this);
+        speech.setOrientation(LinearLayout.HORIZONTAL);
         speech.setGravity(Gravity.CENTER_VERTICAL);
-        speech.setPadding(dp(18), dp(18), dp(18), dp(18));
-        speech.setBackground(roundRect(Color.argb(248, 255, 255, 255), 22, Color.rgb(178, 219, 249), 2));
-        speech.setElevation(dp(5));
+        speech.setPadding(dp(14), dp(16), dp(16), dp(16));
+        speech.setBackground(roundRect(Color.argb(250, 255, 255, 255), 24, Color.rgb(151, 207, 245), 2));
+        speech.setElevation(dp(6));
+        subtitleCard = speech;
+
+        TextView speaker = label("🔊", 28, Color.WHITE, true);
+        speaker.setGravity(Gravity.CENTER);
+        speaker.setContentDescription("Reproducir audio");
+        speaker.setBackground(roundRect(BLUE, 22, BLUE_DARK, 1));
+        speaker.setOnClickListener(v -> {
+            pulse(speaker);
+            speak(currentExercise.english);
+        });
+        speech.addView(speaker, new LinearLayout.LayoutParams(dp(58), dp(58)));
+
+        subtitleText = label(currentExercise.english, 26, BLUE_DARK, true);
+        subtitleText.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
+        subtitleText.setGravity(Gravity.CENTER);
+        subtitleText.setContentDescription("Subtítulo en inglés");
+        subtitleText.setPadding(dp(12), 0, dp(4), 0);
+        LinearLayout.LayoutParams subtitleLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        speech.addView(subtitleText, subtitleLp);
+
         speech.setOnClickListener(v -> speak(currentExercise.english));
         work.addView(speech, matchWrapMargin(0, 2, 0, 14));
 
@@ -865,6 +1017,9 @@ public class MainActivity extends Activity {
         micButton.setBackground(roundRect(Color.WHITE, 18, BLUE, 2));
         micButton.setOnClickListener(v -> startListening());
         page.addView(micButton);
+
+        // V7.1: cada ejercicio pronuncia la frase automáticamente al entrar.
+        queueAutomaticAudio(currentExercise.english);
     }
 
     private void buildWordBank(LinearLayout work) {

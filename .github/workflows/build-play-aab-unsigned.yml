@@ -1,0 +1,37 @@
+name: Build Play AAB unsigned
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-aab:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar proyecto
+        uses: actions/checkout@v4
+
+      - name: Configurar Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+
+      - name: Configurar Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Compilar AAB release
+        run: gradle bundleRelease --stacktrace
+
+      - name: Guardar AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bluelingo-v8.1.1-unsigned-aab
+          path: app/build/outputs/bundle/release/app-release.aab

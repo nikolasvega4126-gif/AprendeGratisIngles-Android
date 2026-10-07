@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="brand_blue">#0D73D9</color>
-    <color name="brand_blue_dark">#073F8D</color>
-    <color name="brand_green">#18B84B</color>
-    <color name="white">#FFFFFF</color>
+    <color name="agi_blue">#0D78D9</color>
+    <color name="agi_blue_dark">#06408C</color>
+    <color name="agi_lime">#63E532</color>
+    <color name="agi_green">#21C56B</color>
+    <color name="agi_red">#EF5360</color>
+    <color name="agi_card">#FAFDFF</color>
+    <color name="agi_text">#073F8D</color>
 </resources>

@@ -1,1 +1,1 @@
-# No custom ProGuard rules needed for this lightweight app.
+# Sin reglas especiales por ahora.

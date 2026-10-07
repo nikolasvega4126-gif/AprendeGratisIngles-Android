@@ -1,22 +1,33 @@
-# Aprende gratis inglés — Android v4.0
+# Aprende Gratis Inglés · V6.6.0 Rebuild nativo
 
-Versión 4.0 construida sobre la v3.5.
+Esta versión reemplaza la arquitectura de “captura completa + zonas invisibles”.
 
-## Novedades
-- Entrenador de pronunciación con micrófono y puntuación aproximada por reconocimiento de voz de Android.
-- Repetición espaciada de vocabulario con intervalos de 1, 3, 7, 14 y 30 días.
-- Diccionario personal con estado de memoria y próximo repaso.
-- Conversaciones guiadas: restaurante, aeropuerto y trabajo.
-- Calendario mensual de estudio.
-- Copia y restauración del progreso mediante archivo JSON; desde el selector de Android puede guardarse en Google Drive, OneDrive u otros proveedores instalados.
-- Mantiene ruta, unidades, prueba de nivel, exámenes, ejercicios, XP, racha, corazones, logros, favoritos, Blogger dinámico, TTS e intro.
+## Qué es real y clicable
+- Ruta de Unidad 1 con 3 lecciones y examen.
+- Desbloqueo progresivo guardado en SharedPreferences.
+- Ejercicios de banco de palabras, selección, escucha y pronunciación.
+- Text-to-Speech en inglés.
+- Reconocimiento de voz con permiso de micrófono.
+- XP, corazones, racha y progreso persistente.
+- Navegación real: Ruta, Practicar, Logros y Perfil.
+- Feedback correcto/incorrecto con reintento y avance.
 
-## Nota sobre sincronización
-La v4.0 incluye copia/restauración portable en la nube mediante el selector de archivos de Android. La sincronización automática con una cuenta propia requerirá configurar un backend (por ejemplo Firebase) en una versión posterior.
+## Unidad 1
+1. Saludos en inglés
+2. Di de dónde eres
+3. Números del 1 al 10
+4. Examen de unidad
 
-## Compilación
-GitHub Actions usa el workflow existente en `.github/workflows/build-apk.yml`.
+Los ejemplos de países usan Polonia, Francia, España, Alemania, Italia e Inglaterra.
 
+## Visual
+Las ilustraciones de Londres se usan solamente como fondo decorativo. Los botones, tarjetas, palabras, navegación, progreso, parlante y micrófono son vistas Android reales.
 
-## V6.0
-Consulta `README_v6.md` para las novedades y el estado real de esta versión.
+## Validación
+El workflow `Build and validate Android APK` hace dos trabajos:
+1. Compila la APK.
+2. Arranca un emulador Pixel 6, instala la app, verifica que aparezca `Saludos en inglés`, toca esa lección y confirma que se abre `Traduce esta oración`, `COMPROBAR` y `USAR MICRÓFONO`.
+
+Además sube las capturas `01-route.png` y `02-exercise.png` como artefacto `AprendeGratisIngles-v6.6.0-ui-validation`.
+
+Un build verde en `build` comprueba compilación. La validación completa exige también que `emulator-smoke-test` termine en verde.

@@ -33,11 +33,6 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.text.InputType;
-import android.webkit.JavascriptInterface;
-import android.webkit.WebChromeClient;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
 import java.text.Normalizer;
 import java.text.SimpleDateFormat;
@@ -156,9 +151,174 @@ public class MainActivity extends Activity {
     };
 
     private final String[] lessonIcons = {"👋", "🙋", "🌍", "🔢", "🎨", "👨‍👩‍👧", "🏠", "📅", "❓", "🏆"};
-    private WebView lessonsWebView;
-    private boolean showingLessonsWeb = false;
+
+    private static final int RETURN_ROUTE = 0;
+    private static final int RETURN_PRACTICE = 1;
+    private int lessonReturnTarget = RETURN_ROUTE;
+    private int practiceSection = 0;
     private boolean notificationPermissionFromOnboarding = false;
+
+    // V8: biblioteca nativa inspirada en el contenido educativo del sitio.
+    // No se abre ningún WebView: todo vive dentro de la app y usa el TTS de Android.
+    private final StudyLesson[] studyLessons = new StudyLesson[]{
+            new StudyLesson("Tiempo y frecuencia", "Palabras para hablar de cuándo ocurre algo.", 7, new StudyItem[]{
+                    new StudyItem("Today", "tudéi", "Hoy"),
+                    new StudyItem("Right now", "ráit náu", "Ahora mismo"),
+                    new StudyItem("Tomorrow", "tamárou", "Mañana"),
+                    new StudyItem("Every day", "évri déi", "Todos los días"),
+                    new StudyItem("Yesterday", "yésterdei", "Ayer"),
+                    new StudyItem("This morning", "dhis mórnin", "Esta mañana"),
+                    new StudyItem("Always", "ólweis", "Siempre"),
+                    new StudyItem("This week", "dhis uík", "Esta semana"),
+                    new StudyItem("Never", "néver", "Nunca"),
+                    new StudyItem("Sometimes", "sámtaims", "A veces"),
+                    new StudyItem("Usually", "iúshuali", "Normalmente")
+            }),
+            new StudyLesson("Saludos y cortesía", "Frases esenciales para iniciar y terminar conversaciones.", 0, new StudyItem[]{
+                    new StudyItem("Hello", "jelóu", "Hola"),
+                    new StudyItem("Hi", "jái", "Hola / Buenas"),
+                    new StudyItem("Good morning", "gud mórnin", "Buenos días"),
+                    new StudyItem("Good afternoon", "gud áfternún", "Buenas tardes"),
+                    new StudyItem("Good evening", "gud ívnin", "Buenas noches"),
+                    new StudyItem("Goodbye", "gudbái", "Adiós"),
+                    new StudyItem("Please", "plís", "Por favor"),
+                    new StudyItem("Thank you", "zánk iu", "Gracias"),
+                    new StudyItem("You are welcome", "iur uélcom", "De nada"),
+                    new StudyItem("Excuse me", "ekskiús mi", "Disculpe")
+            }),
+            new StudyLesson("Presentaciones", "Preséntate y pregunta el nombre de otra persona.", 1, new StudyItem[]{
+                    new StudyItem("My name is…", "mai néim is", "Mi nombre es…"),
+                    new StudyItem("I am…", "ai am", "Yo soy…"),
+                    new StudyItem("What is your name?", "uót is ior néim", "¿Cómo te llamas?"),
+                    new StudyItem("Nice to meet you", "náis tu mít iu", "Mucho gusto"),
+                    new StudyItem("How are you?", "jáu ar iu", "¿Cómo estás?"),
+                    new StudyItem("I am fine", "ai am fáin", "Estoy bien"),
+                    new StudyItem("And you?", "and iu", "¿Y tú?"),
+                    new StudyItem("This is my friend", "dhis is mai frénd", "Este es mi amigo")
+            }),
+            new StudyLesson("Países y origen", "Pregunta y responde de dónde eres.", 2, new StudyItem[]{
+                    new StudyItem("Where are you from?", "uér ar iu from", "¿De dónde eres?"),
+                    new StudyItem("I am from Poland", "ai am from póuland", "Soy de Polonia"),
+                    new StudyItem("France", "fráns", "Francia"),
+                    new StudyItem("Spain", "spéin", "España"),
+                    new StudyItem("Germany", "yérmani", "Alemania"),
+                    new StudyItem("Italy", "ítali", "Italia"),
+                    new StudyItem("England", "íngland", "Inglaterra"),
+                    new StudyItem("I live in…", "ai liv in", "Vivo en…")
+            }),
+            new StudyLesson("Familia", "Vocabulario para hablar de las personas cercanas.", 5, new StudyItem[]{
+                    new StudyItem("Family", "fámili", "Familia"),
+                    new StudyItem("Mother", "móder", "Madre"),
+                    new StudyItem("Father", "fáder", "Padre"),
+                    new StudyItem("Brother", "bróder", "Hermano"),
+                    new StudyItem("Sister", "síster", "Hermana"),
+                    new StudyItem("Son", "san", "Hijo"),
+                    new StudyItem("Daughter", "dóter", "Hija"),
+                    new StudyItem("This is my family", "dhis is mai fámili", "Esta es mi familia")
+            }),
+            new StudyLesson("Casa y objetos", "Habitaciones y objetos que usas todos los días.", 6, new StudyItem[]{
+                    new StudyItem("House", "jáus", "Casa"),
+                    new StudyItem("Kitchen", "kíchen", "Cocina"),
+                    new StudyItem("Bathroom", "bázrum", "Baño"),
+                    new StudyItem("Bedroom", "bédrum", "Dormitorio"),
+                    new StudyItem("Door", "dór", "Puerta"),
+                    new StudyItem("Window", "uíndou", "Ventana"),
+                    new StudyItem("Table", "téibol", "Mesa"),
+                    new StudyItem("Chair", "chér", "Silla"),
+                    new StudyItem("Where is the bathroom?", "uér is de bázrum", "¿Dónde está el baño?")
+            }),
+            new StudyLesson("Trabajo y profesiones", "Frases útiles para hablar del trabajo.", 8, new StudyItem[]{
+                    new StudyItem("Work", "uérk", "Trabajo / trabajar"),
+                    new StudyItem("Job", "yob", "Empleo"),
+                    new StudyItem("Office", "ófis", "Oficina"),
+                    new StudyItem("Manager", "mánayer", "Gerente"),
+                    new StudyItem("Driver", "dráiver", "Conductor"),
+                    new StudyItem("Teacher", "tícher", "Profesor"),
+                    new StudyItem("I work here", "ai uérk jír", "Trabajo aquí"),
+                    new StudyItem("What do you do?", "uót du iu dú", "¿A qué te dedicas?")
+            }),
+            new StudyLesson("Viajes y transporte", "Inglés práctico para moverte por una ciudad.", 2, new StudyItem[]{
+                    new StudyItem("Airport", "érport", "Aeropuerto"),
+                    new StudyItem("Train", "tréin", "Tren"),
+                    new StudyItem("Bus", "bas", "Autobús"),
+                    new StudyItem("Ticket", "tíket", "Billete"),
+                    new StudyItem("Hotel", "joutél", "Hotel"),
+                    new StudyItem("Where is the station?", "uér is de stéishon", "¿Dónde está la estación?"),
+                    new StudyItem("How much is the ticket?", "jáu mach is de tíket", "¿Cuánto cuesta el billete?"),
+                    new StudyItem("I need a taxi", "ai níd a táksi", "Necesito un taxi")
+            }),
+            new StudyLesson("Comida y restaurante", "Pide comida y entiende frases básicas en un restaurante.", 9, new StudyItem[]{
+                    new StudyItem("Water", "uóter", "Agua"),
+                    new StudyItem("Food", "fúd", "Comida"),
+                    new StudyItem("Breakfast", "brékfast", "Desayuno"),
+                    new StudyItem("Lunch", "lanch", "Almuerzo"),
+                    new StudyItem("Dinner", "díner", "Cena"),
+                    new StudyItem("Menu", "méniu", "Menú"),
+                    new StudyItem("I would like…", "ai ud láik", "Me gustaría…"),
+                    new StudyItem("The bill, please", "de bil plís", "La cuenta, por favor")
+            }),
+            new StudyLesson("Compras y situaciones cotidianas", "Frases rápidas para comprar y resolver necesidades básicas.", 9, new StudyItem[]{
+                    new StudyItem("How much is it?", "jáu mach is it", "¿Cuánto cuesta?"),
+                    new StudyItem("I like it", "ai láik it", "Me gusta"),
+                    new StudyItem("I need help", "ai níd jelp", "Necesito ayuda"),
+                    new StudyItem("Where can I pay?", "uér can ai péi", "¿Dónde puedo pagar?"),
+                    new StudyItem("Cash", "kásh", "Efectivo"),
+                    new StudyItem("Card", "kárd", "Tarjeta"),
+                    new StudyItem("Open", "óupen", "Abierto"),
+                    new StudyItem("Closed", "clóuzd", "Cerrado")
+            })
+    };
+
+    private final PronunciationLesson[] pronunciationLessons = new PronunciationLesson[]{
+            new PronunciationLesson("Sonido A corto", "La A corta inglesa es más abierta que la A española, entre A y E. Escucha y copia el audio.", new PronWord[]{
+                    new PronWord("Cat", "kát", "Gato"),
+                    new PronWord("Man", "mán", "Hombre"),
+                    new PronWord("Dad", "dád", "Papá"),
+                    new PronWord("Family", "FÁ-ma-li", "Familia")
+            }),
+            new PronunciationLesson("Sonido E corto", "Haz un sonido breve y relajado, parecido a la E española, sin alargarlo.", new PronWord[]{
+                    new PronWord("Bed", "bed", "Cama"),
+                    new PronWord("Red", "red", "Rojo"),
+                    new PronWord("Pen", "pen", "Bolígrafo"),
+                    new PronWord("Ten", "ten", "Diez")
+            }),
+            new PronunciationLesson("Sonido I corto", "La I corta inglesa es más relajada que la I española. Evita convertirla en una I larga.", new PronWord[]{
+                    new PronWord("Sit", "sit", "Sentarse"),
+                    new PronWord("Big", "big", "Grande"),
+                    new PronWord("Fish", "fish", "Pez"),
+                    new PronWord("Milk", "milk", "Leche")
+            }),
+            new PronunciationLesson("Sonido O corto", "Abre la boca y mantén el sonido breve. Escucha primero y luego imita.", new PronWord[]{
+                    new PronWord("Hot", "jót", "Caliente"),
+                    new PronWord("Dog", "dóg", "Perro"),
+                    new PronWord("Box", "bóks", "Caja"),
+                    new PronWord("Stop", "stóp", "Parar")
+            }),
+            new PronunciationLesson("Sonido U corto", "No es una U española. Es un sonido central y corto, como en cup o bus.", new PronWord[]{
+                    new PronWord("Cup", "kap", "Taza"),
+                    new PronWord("Bus", "bas", "Autobús"),
+                    new PronWord("Sun", "san", "Sol"),
+                    new PronWord("Run", "ran", "Correr")
+            }),
+            new PronunciationLesson("R inglesa", "La R inglesa no vibra como la R española. Lleva la lengua hacia atrás sin tocar el paladar.", new PronWord[]{
+                    new PronWord("Red", "red", "Rojo"),
+                    new PronWord("Right", "ráit", "Derecha / correcto"),
+                    new PronWord("Road", "róud", "Carretera"),
+                    new PronWord("Really", "ríali", "Realmente")
+            }),
+            new PronunciationLesson("Sonido W", "Redondea los labios al comenzar. La W inglesa empieza con un movimiento parecido a una U rápida.", new PronWord[]{
+                    new PronWord("Water", "uóter", "Agua"),
+                    new PronWord("Work", "uérk", "Trabajo"),
+                    new PronWord("Window", "uíndou", "Ventana"),
+                    new PronWord("Week", "uík", "Semana")
+            }),
+            new PronunciationLesson("TH básico", "Coloca suavemente la punta de la lengua entre los dientes y deja pasar el aire. No lo conviertas en T o D.", new PronWord[]{
+                    new PronWord("Think", "thínk", "Pensar"),
+                    new PronWord("Three", "thrí", "Tres"),
+                    new PronWord("Thank you", "thánk iu", "Gracias"),
+                    new PronWord("This", "dhis", "Esto / este")
+            })
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -195,10 +355,10 @@ public class MainActivity extends Activity {
         logoLp.gravity = Gravity.CENTER_HORIZONTAL;
         logoLp.bottomMargin = dp(8);
         box.addView(logo, logoLp);
-        TextView title = label("Aprende Gratis Inglés", 29, BLUE_DARK, true);
+        TextView title = label("BlueLingo", 31, BLUE_DARK, true);
         title.setGravity(Gravity.CENTER);
         box.addView(title);
-        TextView sub = label("Tu aventura para hablar inglés empieza aquí", 15, MUTED, false);
+        TextView sub = label("Aprende Gratis Inglés · Tu aventura empieza aquí", 15, MUTED, false);
         sub.setGravity(Gravity.CENTER);
         sub.setPadding(0, dp(8), 0, dp(18));
         box.addView(sub);
@@ -437,8 +597,6 @@ public class MainActivity extends Activity {
 
     private void showRoute() {
         currentLesson = -1;
-        showingLessonsWeb = false;
-        lessonsWebView = null;
         setRootWithArt(R.drawable.london_route_art);
 
         LinearLayout page = new LinearLayout(this);
@@ -539,7 +697,7 @@ public class MainActivity extends Activity {
                 pulse(card);
                 return;
             }
-            startLesson(index);
+            startLessonFromRoute(index);
         };
         node.setOnClickListener(click);
         card.setOnClickListener(click);
@@ -588,32 +746,79 @@ public class MainActivity extends Activity {
 
     private void showPractice() {
         currentLesson = -1;
-        showingLessonsWeb = false;
+        subtitleText = null;
+        subtitleCard = null;
         setRootWithArt(R.drawable.london_route_art);
+
         LinearLayout page = pageColumn();
         page.addView(buildHud());
-        LinearLayout card = cardColumn();
-        card.setPadding(dp(24), dp(24), dp(24), dp(24));
-        card.addView(label("🧠 Practicar", 30, BLUE_DARK, true));
-        TextView copy = label("Refuerza lo que ya desbloqueaste. La práctica usa ejercicios reales de tus lecciones completadas.", 17, MUTED, false);
-        copy.setPadding(0, dp(10), 0, dp(18));
-        card.addView(copy);
 
-        TextView btn = actionButton("PRACTICAR AHORA", LIME, BLUE_DARK);
-        btn.setOnClickListener(v -> startLesson(firstUnlockedPracticeLesson()));
-        card.addView(btn);
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        scroll.setClipToPadding(false);
+        LinearLayout body = new LinearLayout(this);
+        body.setOrientation(LinearLayout.VERTICAL);
+        body.setPadding(dp(2), dp(10), dp(2), dp(28));
+        scroll.addView(body, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        TextView all = actionButton("VER TODAS LAS LECCIONES", BLUE, Color.WHITE);
-        all.setBackground(roundRect(BLUE, 18, BLUE_DARK, 1));
-        all.setOnClickListener(v -> showAllLessonsWeb());
-        card.addView(all, matchWrapMargin(0, 12, 0, 0));
+        LinearLayout hero = cardColumn();
+        hero.setPadding(dp(22), dp(18), dp(22), dp(18));
+        hero.addView(label("📚  CENTRO DE PRÁCTICA", 13, BLUE, true));
+        TextView title = label("Aprende, escucha y repite", 28, BLUE_DARK, true);
+        title.setPadding(0, dp(4), 0, 0);
+        hero.addView(title);
+        TextView copy = label("Todo el contenido está integrado en BlueLingo. No necesitas abrir la web para estudiar pronunciación, vocabulario o lecciones.", 16, MUTED, false);
+        copy.setPadding(0, dp(7), 0, dp(14));
+        hero.addView(copy);
 
-        TextView hint = label("Abre aprendegratisingles.com dentro de la app", 13, MUTED, false);
-        hint.setGravity(Gravity.CENTER);
-        hint.setPadding(0, dp(8), 0, 0);
-        card.addView(hint);
+        TextView continueBtn = actionButton("▶  CONTINUAR PRÁCTICA", LIME, BLUE_DARK);
+        continueBtn.setOnClickListener(v -> startLessonFromPractice(firstUnlockedPracticeLesson()));
+        hero.addView(continueBtn);
+        body.addView(hero, matchWrapMargin(0, 0, 0, 12));
 
-        page.addView(card, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        LinearLayout selector = new LinearLayout(this);
+        selector.setOrientation(LinearLayout.HORIZONTAL);
+        selector.setPadding(dp(5), dp(5), dp(5), dp(5));
+        selector.setBackground(roundRect(Color.argb(245, 255, 255, 255), 20, BORDER, 1));
+
+        TextView lessonsTab = label("📘  LECCIONES", 14, practiceSection == 0 ? Color.WHITE : BLUE_DARK, true);
+        lessonsTab.setGravity(Gravity.CENTER);
+        lessonsTab.setPadding(dp(8), dp(12), dp(8), dp(12));
+        lessonsTab.setBackground(roundRect(practiceSection == 0 ? BLUE : Color.TRANSPARENT, 16, Color.TRANSPARENT, 0));
+        lessonsTab.setOnClickListener(v -> {
+            practiceSection = 0;
+            showPractice();
+        });
+        selector.addView(lessonsTab, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView pronunciationTab = label("🗣️  PRONUNCIACIÓN", 14, practiceSection == 1 ? Color.WHITE : BLUE_DARK, true);
+        pronunciationTab.setGravity(Gravity.CENTER);
+        pronunciationTab.setPadding(dp(8), dp(12), dp(8), dp(12));
+        pronunciationTab.setBackground(roundRect(practiceSection == 1 ? GREEN : Color.TRANSPARENT, 16, Color.TRANSPARENT, 0));
+        pronunciationTab.setOnClickListener(v -> {
+            practiceSection = 1;
+            showPractice();
+        });
+        selector.addView(pronunciationTab, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        body.addView(selector, matchWrapMargin(0, 0, 0, 14));
+
+        if (practiceSection == 0) {
+            body.addView(label("Todas las lecciones", 24, BLUE_DARK, true), matchWrapMargin(4, 0, 0, 4));
+            TextView hint = label("Abre una lección para estudiar el vocabulario, escuchar cada palabra y luego practicarla con ejercicios.", 15, MUTED, false);
+            body.addView(hint, matchWrapMargin(4, 0, 4, 12));
+            for (int i = 0; i < studyLessons.length; i++) {
+                body.addView(studyLessonCard(i), matchWrapMargin(0, 0, 0, 12));
+            }
+        } else {
+            body.addView(label("Pronunciación paso a paso", 24, BLUE_DARK, true), matchWrapMargin(4, 0, 0, 4));
+            TextView hint = label("Escucha a velocidad normal, lenta o repite tres veces. Todo el audio usa el motor de voz nativo de Android.", 15, MUTED, false);
+            body.addView(hint, matchWrapMargin(4, 0, 4, 12));
+            for (int i = 0; i < pronunciationLessons.length; i++) {
+                body.addView(pronunciationLessonCard(i), matchWrapMargin(0, 0, 0, 12));
+            }
+        }
+
+        page.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         page.addView(bottomNav(1));
         root.addView(page);
     }
@@ -627,112 +832,323 @@ public class MainActivity extends Activity {
         return Math.max(0, lastCompleted);
     }
 
-    private void showAllLessonsWeb() {
+    private View studyLessonCard(int index) {
+        StudyLesson lesson = studyLessons[index];
+        LinearLayout card = cardColumn();
+        card.setPadding(dp(20), dp(17), dp(20), dp(17));
+
+        TextView badge = pill("LECCIÓN " + (index + 1), Color.rgb(232, 246, 255), BLUE_DARK);
+        badge.setGravity(Gravity.CENTER);
+        card.addView(badge, wrapMargin(0, 0, 0, 10));
+
+        TextView icon = label(index < 2 ? "🗣️" : "📘", 36, BLUE, true);
+        icon.setPadding(0, 0, 0, dp(5));
+        card.addView(icon);
+
+        TextView title = label(lesson.title, 23, BLUE_DARK, true);
+        title.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
+        card.addView(title);
+
+        TextView subtitle = label(lesson.subtitle, 15, MUTED, false);
+        subtitle.setPadding(0, dp(5), 0, dp(12));
+        card.addView(subtitle);
+
+        LinearLayout preview = new LinearLayout(this);
+        preview.setOrientation(LinearLayout.VERTICAL);
+        preview.setPadding(dp(14), dp(10), dp(14), dp(10));
+        preview.setBackground(roundRect(Color.rgb(244, 249, 253), 16, BORDER, 1));
+        int previewCount = Math.min(3, lesson.items.length);
+        for (int i = 0; i < previewCount; i++) {
+            StudyItem item = lesson.items[i];
+            TextView row = label("•  " + item.english + "  =  " + item.spanish, 15, i == 0 ? BLUE_DARK : MUTED, i == 0);
+            row.setPadding(0, dp(3), 0, dp(3));
+            preview.addView(row);
+        }
+        card.addView(preview);
+
+        TextView open = label("Abrir lección  →", 17, GREEN, true);
+        open.setPadding(0, dp(13), 0, 0);
+        card.addView(open);
+
+        card.setOnClickListener(v -> {
+            pulse(card);
+            showStudyLesson(index);
+        });
+        return card;
+    }
+
+    private void showStudyLesson(int index) {
+        if (index < 0 || index >= studyLessons.length) return;
+        StudyLesson lesson = studyLessons[index];
         currentLesson = -1;
-        showingLessonsWeb = true;
-        root = new FrameLayout(this);
-        root.setBackgroundColor(Color.WHITE);
-        setContentView(root);
+        subtitleText = null;
+        subtitleCard = null;
+        setRootWithArt(R.drawable.london_route_art);
 
-        LinearLayout page = new LinearLayout(this);
-        page.setOrientation(LinearLayout.VERTICAL);
-        root.addView(page, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        LinearLayout page = pageColumn();
+        page.addView(nativeBackBar("Lección " + (index + 1), () -> showPractice()));
 
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        LinearLayout body = new LinearLayout(this);
+        body.setOrientation(LinearLayout.VERTICAL);
+        body.setPadding(dp(4), dp(10), dp(4), dp(28));
+        scroll.addView(body, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        LinearLayout intro = cardColumn();
+        intro.setPadding(dp(22), dp(20), dp(22), dp(20));
+        intro.addView(label("INGLÉS BÁSICO · LECCIÓN " + (index + 1), 13, GREEN, true));
+        TextView title = label(lesson.title, 29, BLUE_DARK, true);
+        title.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
+        title.setPadding(0, dp(6), 0, 0);
+        intro.addView(title);
+        TextView desc = label(lesson.subtitle + " Toca 🔊 para escuchar y repite en voz alta.", 16, MUTED, false);
+        desc.setPadding(0, dp(8), 0, 0);
+        intro.addView(desc);
+        body.addView(intro, matchWrapMargin(0, 0, 0, 12));
+
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setPadding(dp(14), dp(12), dp(14), dp(12));
+        header.setBackground(roundRect(Color.rgb(7, 35, 61), 14, Color.TRANSPARENT, 0));
+        TextView h1 = label("INGLÉS", 13, Color.WHITE, true);
+        TextView h2 = label("PRONUNCIACIÓN", 13, Color.WHITE, true);
+        TextView h3 = label("ESPAÑOL", 13, Color.WHITE, true);
+        header.addView(h1, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.05f));
+        header.addView(h2, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.15f));
+        header.addView(h3, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        body.addView(header);
+
+        for (int i = 0; i < lesson.items.length; i++) {
+            final StudyItem item = lesson.items[i];
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setPadding(dp(14), dp(13), dp(8), dp(13));
+            int rowBg = (i % 2 == 0) ? Color.argb(246, 244, 249, 253) : Color.argb(248, 255, 255, 255);
+            row.setBackground(roundRect(rowBg, 0, Color.rgb(225, 234, 241), 1));
+
+            TextView english = label(item.english, 16, Color.rgb(40, 58, 75), true);
+            english.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
+            TextView pronunciation = label("(" + item.pronunciation + ")", 15, RED, false);
+            TextView spanish = label(item.spanish, 15, MUTED, false);
+            TextView speaker = label("🔊", 19, BLUE, true);
+            speaker.setGravity(Gravity.CENTER);
+            speaker.setContentDescription("Escuchar " + item.english);
+            speaker.setOnClickListener(v -> speakAtRate(item.english, 0.90f, 1));
+
+            LinearLayout first = new LinearLayout(this);
+            first.setOrientation(LinearLayout.HORIZONTAL);
+            first.setGravity(Gravity.CENTER_VERTICAL);
+            first.addView(english, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+            first.addView(speaker, new LinearLayout.LayoutParams(dp(36), dp(36)));
+            row.addView(first, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.15f));
+            row.addView(pronunciation, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.05f));
+            row.addView(spanish, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+            row.setOnClickListener(v -> speakAtRate(item.english, 0.90f, 1));
+            body.addView(row);
+        }
+
+        LinearLayout practice = cardColumn();
+        practice.setPadding(dp(18), dp(18), dp(18), dp(18));
+        TextView practiceTitle = label("¿Listo para probarte?", 20, BLUE_DARK, true);
+        practice.addView(practiceTitle);
+        TextView practiceCopy = label("Pasa de estudiar a responder ejercicios interactivos de esta temática.", 14, MUTED, false);
+        practiceCopy.setPadding(0, dp(5), 0, dp(12));
+        practice.addView(practiceCopy);
+        TextView btn = actionButton("▶  PRACTICAR ESTA LECCIÓN", LIME, BLUE_DARK);
+        btn.setOnClickListener(v -> startLessonFromPractice(Math.max(0, Math.min(lessons.length - 1, lesson.routeLessonIndex))));
+        practice.addView(btn);
+        body.addView(practice, matchWrapMargin(0, 14, 0, 0));
+
+        page.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        root.addView(page);
+    }
+
+    private View pronunciationLessonCard(int index) {
+        PronunciationLesson lesson = pronunciationLessons[index];
+        LinearLayout card = cardColumn();
+        card.setPadding(dp(20), dp(17), dp(20), dp(17));
+
+        TextView badge = pill("PRONUNCIACIÓN · LECCIÓN " + (index + 1), Color.rgb(235, 250, 239), Color.rgb(19, 139, 74));
+        card.addView(badge, wrapMargin(0, 0, 0, 10));
+        card.addView(label("🗣️", 36, BLUE, true));
+
+        TextView title = label(lesson.title, 23, BLUE_DARK, true);
+        title.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
+        title.setPadding(0, dp(4), 0, 0);
+        card.addView(title);
+
+        TextView tip = label(lesson.tip, 15, MUTED, false);
+        tip.setPadding(0, dp(6), 0, dp(12));
+        card.addView(tip);
+
+        LinearLayout preview = new LinearLayout(this);
+        preview.setOrientation(LinearLayout.HORIZONTAL);
+        for (int i = 0; i < Math.min(3, lesson.words.length); i++) {
+            PronWord w = lesson.words[i];
+            TextView mini = label(w.english + "\n" + w.pronunciation, 13, i == 0 ? BLUE_DARK : MUTED, i == 0);
+            mini.setGravity(Gravity.CENTER);
+            mini.setPadding(dp(5), dp(9), dp(5), dp(9));
+            mini.setBackground(roundRect(Color.rgb(244, 249, 253), 12, BORDER, 1));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            if (i > 0) lp.leftMargin = dp(6);
+            preview.addView(mini, lp);
+        }
+        card.addView(preview);
+        TextView open = label("Practicar sonidos  →", 17, GREEN, true);
+        open.setPadding(0, dp(13), 0, 0);
+        card.addView(open);
+
+        card.setOnClickListener(v -> {
+            pulse(card);
+            showPronunciationLesson(index);
+        });
+        return card;
+    }
+
+    private void showPronunciationLesson(int index) {
+        if (index < 0 || index >= pronunciationLessons.length) return;
+        PronunciationLesson lesson = pronunciationLessons[index];
+        currentLesson = -1;
+        subtitleText = null;
+        subtitleCard = null;
+        setRootWithArt(R.drawable.london_route_art);
+
+        LinearLayout page = pageColumn();
+        page.addView(nativeBackBar("Pronunciación", () -> showPractice()));
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        LinearLayout body = new LinearLayout(this);
+        body.setOrientation(LinearLayout.VERTICAL);
+        body.setPadding(dp(4), dp(10), dp(4), dp(30));
+        scroll.addView(body, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        LinearLayout intro = cardColumn();
+        intro.setPadding(dp(22), dp(19), dp(22), dp(19));
+        intro.addView(label("PRONUNCIACIÓN FÁCIL · LECCIÓN " + (index + 1), 13, GREEN, true));
+        TextView title = label(lesson.title, 29, BLUE_DARK, true);
+        title.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
+        title.setPadding(0, dp(7), 0, 0);
+        intro.addView(title);
+
+        LinearLayout tipCard = new LinearLayout(this);
+        tipCard.setOrientation(LinearLayout.HORIZONTAL);
+        tipCard.setGravity(Gravity.TOP);
+        tipCard.setPadding(dp(14), dp(13), dp(14), dp(13));
+        tipCard.setBackground(roundRect(Color.rgb(244, 249, 253), 16, Color.rgb(200, 222, 238), 1));
+        TextView bulb = label("💡", 22, GREEN, true);
+        TextView tip = label(lesson.tip, 15, MUTED, false);
+        tip.setPadding(dp(8), 0, 0, 0);
+        tipCard.addView(bulb);
+        tipCard.addView(tip, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        intro.addView(tipCard, matchWrapMargin(0, 13, 0, 0));
+        body.addView(intro, matchWrapMargin(0, 0, 0, 12));
+
+        for (PronWord word : lesson.words) {
+            body.addView(pronunciationWordCard(word), matchWrapMargin(0, 0, 0, 12));
+        }
+
+        LinearLayout coach = cardColumn();
+        coach.setPadding(dp(18), dp(17), dp(18), dp(17));
+        coach.addView(label("🎯 Método BlueLingo", 18, BLUE_DARK, true));
+        TextView coachText = label("1. Escucha normal.  2. Escucha lento.  3. Repite tres veces mirando la palabra.  4. Intenta decirla sin mirar.", 14, MUTED, false);
+        coachText.setPadding(0, dp(6), 0, 0);
+        coach.addView(coachText);
+        body.addView(coach);
+
+        page.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        root.addView(page);
+    }
+
+    private View pronunciationWordCard(PronWord word) {
+        LinearLayout card = cardColumn();
+        card.setPadding(dp(18), dp(16), dp(18), dp(16));
+
+        TextView english = label(word.english, 25, Color.rgb(29, 46, 63), true);
+        english.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
+        card.addView(english);
+
+        TextView pronunciation = label(word.pronunciation, 17, RED, true);
+        pronunciation.setPadding(0, dp(4), 0, 0);
+        card.addView(pronunciation);
+
+        TextView spanish = label(word.spanish, 15, MUTED, false);
+        spanish.setPadding(0, dp(4), 0, dp(12));
+        card.addView(spanish);
+
+        LinearLayout actions = new LinearLayout(this);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+
+        TextView listen = smallAudioButton("🔊 Escuchar", BLUE, Color.WHITE);
+        listen.setOnClickListener(v -> speakAtRate(word.english, 0.90f, 1));
+        actions.addView(listen, new LinearLayout.LayoutParams(0, dp(52), 1f));
+
+        TextView slow = smallAudioButton("🐢 Lento", Color.rgb(64, 157, 225), Color.WHITE);
+        slow.setOnClickListener(v -> speakAtRate(word.english, 0.62f, 1));
+        LinearLayout.LayoutParams slowLp = new LinearLayout.LayoutParams(0, dp(52), 1f);
+        slowLp.leftMargin = dp(7);
+        actions.addView(slow, slowLp);
+
+        TextView repeat = smallAudioButton("🔁 ×3", GREEN, Color.WHITE);
+        repeat.setOnClickListener(v -> speakAtRate(word.english, 0.82f, 3));
+        LinearLayout.LayoutParams repeatLp = new LinearLayout.LayoutParams(0, dp(52), 1f);
+        repeatLp.leftMargin = dp(7);
+        actions.addView(repeat, repeatLp);
+
+        card.addView(actions);
+        return card;
+    }
+
+    private TextView smallAudioButton(String text, int bg, int fg) {
+        TextView b = label(text, 14, fg, true);
+        b.setGravity(Gravity.CENTER);
+        b.setPadding(dp(7), dp(8), dp(7), dp(8));
+        b.setBackground(roundRect(bg, 15, Color.argb(70, 0, 0, 0), 1));
+        b.setElevation(dp(3));
+        return b;
+    }
+
+    private View nativeBackBar(String title, Runnable backAction) {
         LinearLayout top = new LinearLayout(this);
         top.setOrientation(LinearLayout.HORIZONTAL);
         top.setGravity(Gravity.CENTER_VERTICAL);
-        top.setPadding(dp(12), dp(10), dp(12), dp(10));
-        top.setBackgroundColor(BLUE_DARK);
+        top.setPadding(dp(2), dp(4), dp(2), dp(6));
+
         TextView back = pill("‹", BLUE, Color.WHITE);
-        back.setTextSize(26);
-        back.setOnClickListener(v -> showPractice());
+        back.setTextSize(27);
+        back.setGravity(Gravity.CENTER);
+        back.setOnClickListener(v -> backAction.run());
         top.addView(back, new LinearLayout.LayoutParams(dp(48), dp(48)));
-        TextView title = label("Todas las lecciones", 20, Color.WHITE, true);
+
+        TextView titleView = label(title, 20, Color.WHITE, true);
+        titleView.setShadowLayer(5f, 0, 2, Color.argb(110, 0, 0, 0));
         LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
         tp.leftMargin = dp(12);
-        top.addView(title, tp);
-        page.addView(top);
+        top.addView(titleView, tp);
+        return top;
+    }
 
-        lessonsWebView = new WebView(this);
-        WebSettings settings = lessonsWebView.getSettings();
-        settings.setJavaScriptEnabled(true);
-        settings.setDomStorageEnabled(true);
-        settings.setLoadWithOverviewMode(true);
-        settings.setUseWideViewPort(true);
-        settings.setMediaPlaybackRequiresUserGesture(false);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            settings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
+    private void speakAtRate(String text, float rate, int repetitions) {
+        if (text == null || text.trim().isEmpty()) return;
+        if (!ttsReady || tts == null) {
+            Toast.makeText(this, "El audio todavía se está preparando", Toast.LENGTH_SHORT).show();
+            return;
         }
-        lessonsWebView.setWebChromeClient(new WebChromeClient());
-        lessonsWebView.addJavascriptInterface(new WebAudioBridge(), "AGINativeAudio");
-        lessonsWebView.setWebViewClient(new WebViewClient() {
-            @Override public void onPageFinished(WebView view, String url) {
-                super.onPageFinished(view, url);
-                installWebAudioBridge(view);
+        try {
+            tts.stop();
+            tts.setSpeechRate(rate);
+            for (int i = 0; i < Math.max(1, repetitions); i++) {
+                String id = "practice_" + System.currentTimeMillis() + "_" + i;
+                tts.speak(text, i == 0 ? TextToSpeech.QUEUE_FLUSH : TextToSpeech.QUEUE_ADD, null, id);
             }
-        });
-        lessonsWebView.loadUrl("https://www.aprendegratisingles.com/p/lecciones.html");
-        page.addView(lessonsWebView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
-    }
-
-    private final class WebAudioBridge {
-        @JavascriptInterface
-        public void speak(String text) {
-            if (text == null) return;
-            String clean = text.trim();
-            if (clean.isEmpty()) return;
-            if (clean.length() > 300) clean = clean.substring(0, 300);
-            final String phrase = clean;
-            runOnUiThread(() -> MainActivity.this.speak(phrase));
+            tts.setSpeechRate(0.90f);
+        } catch (Throwable t) {
+            Toast.makeText(this, "No pude reproducir el audio", Toast.LENGTH_SHORT).show();
+            try { tts.setSpeechRate(0.90f); } catch (Throwable ignored) {}
         }
-    }
-
-    private void installWebAudioBridge(WebView view) {
-        if (view == null) return;
-        String js =
-                "(function(){" +
-                "try{" +
-                "if(window.__agiBridgeInstalled){return;}" +
-                "window.__agiBridgeInstalled=true;" +
-                "window.__agiNativeSpoke=false;" +
-                "function agiSpeak(t){try{t=String(t||'').trim();if(!t)return;window.__agiNativeSpoke=true;AGINativeAudio.speak(t);}catch(e){}}" +
-                "try{" +
-                "if(window.speechSynthesis && typeof window.speechSynthesis.speak==='function'){" +
-                "var originalSpeak=window.speechSynthesis.speak.bind(window.speechSynthesis);" +
-                "window.speechSynthesis.speak=function(u){" +
-                "try{var t=(u&&u.text)?u.text:'';if(t){agiSpeak(t);return;}}catch(e){}" +
-                "try{return originalSpeak(u);}catch(e){}" +
-                "};" +
-                "}" +
-                "}catch(e){}" +
-                "document.addEventListener('click',function(ev){" +
-                "try{" +
-                "var el=ev.target;" +
-                "for(var i=0;i<4 && el;i++,el=el.parentElement){" +
-                "var tx=((el.innerText||el.textContent||'')+'').trim();" +
-                "var low=tx.toLowerCase();" +
-                "if(low==='escuchar' || low.indexOf('🔊')>=0 || low.indexOf('escuchar')>=0){" +
-                "window.__agiNativeSpoke=false;" +
-                "(function(btn){" +
-                "setTimeout(function(){" +
-                "if(window.__agiNativeSpoke)return;" +
-                "var node=btn;" +
-                "for(var d=0;d<4 && node;d++,node=node.parentElement){" +
-                "var attrs=['data-text','data-word','data-phrase','data-audio-text','data-pronunciation'];" +
-                "for(var a=0;a<attrs.length;a++){var v=node.getAttribute&&node.getAttribute(attrs[a]);if(v&&v.length<250){agiSpeak(v);return;}}" +
-                "var cand=node.querySelector&&node.querySelector('.english,.phrase,.word,.pronunciation,[data-english],[lang=en]');" +
-                "if(cand){var c=(cand.getAttribute&&cand.getAttribute('data-english'))||(cand.innerText||cand.textContent||'');c=String(c).trim();if(c&&c.length<250&&c.toLowerCase().indexOf('escuchar')<0){agiSpeak(c);return;}}" +
-                "}" +
-                "},180);" +
-                "})(el);" +
-                "break;" +
-                "}" +
-                "}" +
-                "}catch(e){}" +
-                "},true);" +
-                "}catch(e){}" +
-                "})();";
-        view.evaluateJavascript(js, null);
     }
 
     private void showLeague() {
@@ -914,11 +1330,32 @@ public class MainActivity extends Activity {
         return page;
     }
 
+    private void startLessonFromRoute(int lessonIndex) {
+        lessonReturnTarget = RETURN_ROUTE;
+        startLesson(lessonIndex);
+    }
+
+    private void startLessonFromPractice(int lessonIndex) {
+        lessonReturnTarget = RETURN_PRACTICE;
+        startLesson(lessonIndex);
+    }
+
     private void startLesson(int lessonIndex) {
         if (lessonIndex < 0 || lessonIndex >= lessons.length) return;
         currentLesson = lessonIndex;
         currentQuestion = 0;
         showExercise();
+    }
+
+    private void returnAfterLesson() {
+        currentLesson = -1;
+        currentQuestion = 0;
+        if (lessonReturnTarget == RETURN_PRACTICE) {
+            practiceSection = 0;
+            showPractice();
+        } else {
+            showRoute();
+        }
     }
 
     private void showExercise() {
@@ -943,7 +1380,7 @@ public class MainActivity extends Activity {
         top.setGravity(Gravity.CENTER_VERTICAL);
         TextView close = pill("✕", BLUE, Color.WHITE);
         close.setGravity(Gravity.CENTER);
-        close.setOnClickListener(v -> showRoute());
+        close.setOnClickListener(v -> returnAfterLesson());
         top.addView(close, new LinearLayout.LayoutParams(dp(48), dp(48)));
 
         exerciseProgress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
@@ -1191,8 +1628,9 @@ public class MainActivity extends Activity {
         xp.setGravity(Gravity.CENTER);
         xp.setPadding(0, dp(8), 0, dp(18));
         done.addView(xp);
-        TextView btn = actionButton("VOLVER A LA RUTA", LIME, BLUE_DARK);
-        btn.setOnClickListener(v -> showRoute());
+        String destination = lessonReturnTarget == RETURN_PRACTICE ? "VOLVER A PRACTICAR" : "VOLVER A LA RUTA";
+        TextView btn = actionButton(destination, LIME, BLUE_DARK);
+        btn.setOnClickListener(v -> returnAfterLesson());
         done.addView(btn);
 
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
@@ -1437,13 +1875,11 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        if (showingLessonsWeb) {
-            if (lessonsWebView != null && lessonsWebView.canGoBack()) lessonsWebView.goBack();
-            else showPractice();
+        if (currentLesson >= 0) {
+            returnAfterLesson();
             return;
         }
-        if (currentLesson >= 0) showRoute();
-        else super.onBackPressed();
+        super.onBackPressed();
     }
 
     @Override
@@ -1453,6 +1889,56 @@ public class MainActivity extends Activity {
             if (recognizer != null) recognizer.destroy();
         } catch (Throwable ignored) {}
         super.onDestroy();
+    }
+
+    private static class StudyItem {
+        final String english;
+        final String pronunciation;
+        final String spanish;
+
+        StudyItem(String english, String pronunciation, String spanish) {
+            this.english = english;
+            this.pronunciation = pronunciation;
+            this.spanish = spanish;
+        }
+    }
+
+    private static class StudyLesson {
+        final String title;
+        final String subtitle;
+        final int routeLessonIndex;
+        final StudyItem[] items;
+
+        StudyLesson(String title, String subtitle, int routeLessonIndex, StudyItem[] items) {
+            this.title = title;
+            this.subtitle = subtitle;
+            this.routeLessonIndex = routeLessonIndex;
+            this.items = items;
+        }
+    }
+
+    private static class PronWord {
+        final String english;
+        final String pronunciation;
+        final String spanish;
+
+        PronWord(String english, String pronunciation, String spanish) {
+            this.english = english;
+            this.pronunciation = pronunciation;
+            this.spanish = spanish;
+        }
+    }
+
+    private static class PronunciationLesson {
+        final String title;
+        final String tip;
+        final PronWord[] words;
+
+        PronunciationLesson(String title, String tip, PronWord[] words) {
+            this.title = title;
+            this.tip = tip;
+            this.words = words;
+        }
     }
 
     private static class Exercise {

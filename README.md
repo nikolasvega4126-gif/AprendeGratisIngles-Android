@@ -1,18 +1,16 @@
-# Aprende Gratis Inglés V7.1.0
+# BlueLingo 8.0.0 — evolución nativa
 
-Mejoras principales de esta versión:
+Esta versión elimina el WebView de “Todas las lecciones” y lleva el contenido de estudio y pronunciación dentro de la app.
 
-- Audio inglés automático al abrir cada ejercicio.
-- Botón de parlante se mantiene para repetir manualmente.
-- Subtítulo grande de la frase inglesa con tipografía redondeada y colores de la app.
-- El subtítulo reacciona visualmente mientras TTS está reproduciendo.
-- Nuevo icono oficial de la app en launcher y splash.
-- WebView de “Ver todas las lecciones” mejorado para audio:
-  - JavaScript y almacenamiento DOM.
-  - reproducción multimedia sin bloqueo por gesto.
-  - WebChromeClient.
-  - puente nativo Android para speechSynthesis y botones de “Escuchar”.
-- Se conserva todo lo funcional de V7.0.0: splash, onboarding, perfil, objetivos, ligas, notificaciones, XP, lecciones, audio y micrófono.
+## Cambios principales
+- Marca BlueLingo y nuevo icono con la mascota azul + libro.
+- Ruta conserva sus lecciones y abre ejercicios sin cambiar a la pestaña Practicar.
+- Practicar ahora contiene dos secciones nativas: Lecciones y Pronunciación.
+- 10 lecciones de estudio con vocabulario, pronunciación aproximada, traducción y audio nativo.
+- 8 módulos de pronunciación con Escuchar, Lento y repetir ×3.
+- TTS nativo de Android en todas las tarjetas.
+- Botón “Practicar esta lección” conecta el contenido de estudio con los ejercicios interactivos.
+- No se abre aprendegratisingles.com dentro de la app.
+- Se mantienen XP, corazones, racha, liga, perfil, onboarding y notificaciones.
 
-Versión: 7.1.0
-VersionCode: 31
+Version: 8.0.0 (40)

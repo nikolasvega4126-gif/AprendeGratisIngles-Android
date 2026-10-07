@@ -47,7 +47,7 @@ public class NotificationReceiver extends BroadcastReceiver {
                 ? new Notification.Builder(context, CHANNEL)
                 : new Notification.Builder(context);
         builder.setSmallIcon(android.R.drawable.ic_dialog_info)
-                .setContentTitle("🇬🇧 Tu inglés te espera")
+                .setContentTitle("🐦 Bluelingo te espera")
                 .setContentText(text)
                 .setStyle(new Notification.BigTextStyle().bigText(text))
                 .setAutoCancel(true)

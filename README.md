@@ -1,16 +1,23 @@
-# BlueLingo 8.0.0 — evolución nativa
+# Bluelingo 8.1.0 — sonidos, perfil y video de inicio
 
-Esta versión elimina el WebView de “Todas las lecciones” y lleva el contenido de estudio y pronunciación dentro de la app.
+Evolución sobre la base estable 8.0.0.
 
 ## Cambios principales
-- Marca BlueLingo y nuevo icono con la mascota azul + libro.
-- Ruta conserva sus lecciones y abre ejercicios sin cambiar a la pestaña Practicar.
-- Practicar ahora contiene dos secciones nativas: Lecciones y Pronunciación.
-- 10 lecciones de estudio con vocabulario, pronunciación aproximada, traducción y audio nativo.
-- 8 módulos de pronunciación con Escuchar, Lento y repetir ×3.
-- TTS nativo de Android en todas las tarjetas.
-- Botón “Practicar esta lección” conecta el contenido de estudio con los ejercicios interactivos.
-- No se abre aprendegratisingles.com dentro de la app.
-- Se mantienen XP, corazones, racha, liga, perfil, onboarding y notificaciones.
 
-Version: 8.0.0 (40)
+- Marca visible corregida a **Bluelingo**.
+- Video de inicio nativo (`res/raw/startup.mp4`) en cada arranque en frío.
+- Si la app queda en segundo plano menos de 3 minutos, vuelve exactamente donde estaba sin mostrar el video.
+- Si permanece fuera 3 minutos o más, el video se reproduce al regresar y después continúa en la misma pantalla.
+- Barra inferior simplificada a **Ruta · Practicar · Sonidos · Perfil**.
+- Nueva sección **Sonidos** con vocales y consonantes, símbolos fonéticos, ejemplos y progreso.
+- Entrenamiento auditivo aleatorio de 10 preguntas por sesión, audio automático y botón para repetir.
+- Banco amplio de pares auditivos; no usa siempre las mismas palabras.
+- XP y progreso de pronunciación guardados localmente.
+- Perfil rediseñado con avatar seleccionable desde la galería, estadísticas, nivel, logros y recordatorios.
+- Practicar continúa siendo 100% nativo, sin WebView.
+- Se mantienen Ruta, lecciones, TTS, micrófono, corazones, XP, racha, onboarding y notificaciones.
+
+## Versión
+
+- `versionName = 8.1.0`
+- `versionCode = 41`

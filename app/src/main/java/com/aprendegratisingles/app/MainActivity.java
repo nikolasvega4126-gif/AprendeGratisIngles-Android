@@ -15,6 +15,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.net.Uri;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -32,6 +33,7 @@ import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.VideoView;
 import android.text.InputType;
 
 import java.text.Normalizer;
@@ -43,6 +45,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Random;
 
 public class MainActivity extends Activity {
 
@@ -63,12 +66,20 @@ public class MainActivity extends Activity {
     private static final int TYPE_SPEAK = 3;
     private static final String NOTIFICATION_CHANNEL = "daily_english";
     private static final int REQ_NOTIFICATIONS = 702;
+    private static final int REQ_AVATAR = 801;
+    private static final long REENTRY_SPLASH_MS = 3L * 60L * 1000L;
 
     private SharedPreferences prefs;
     private FrameLayout root;
     private TextToSpeech tts;
     private boolean ttsReady;
     private SpeechRecognizer recognizer;
+    private boolean initialSplashFinished = false;
+    private boolean startupVideoVisible = false;
+    private VideoView startupVideo;
+    private int startupVideoPosition = 0;
+    private long backgroundStartedAt = 0L;
+    private final Random random = new Random();
 
     private int currentLesson = -1;
     private int currentQuestion = 0;
@@ -157,6 +168,17 @@ public class MainActivity extends Activity {
     private int lessonReturnTarget = RETURN_ROUTE;
     private int practiceSection = 0;
     private boolean notificationPermissionFromOnboarding = false;
+
+    private int soundQuizQuestion = 0;
+    private int soundQuizCorrect = 0;
+    private final ArrayList<SoundPair> soundQuizQueue = new ArrayList<>();
+    private SoundPair currentSoundPair;
+    private String selectedSoundAnswer = "";
+    private TextView soundCheckButton;
+    private TextView soundOptionA;
+    private TextView soundOptionB;
+    private TextView soundFeedback;
+    private boolean inSoundQuiz = false;
 
     // V8: biblioteca nativa inspirada en el contenido educativo del sitio.
     // No se abre ningún WebView: todo vive dentro de la app y usa el TTS de Android.
@@ -320,6 +342,76 @@ public class MainActivity extends Activity {
             })
     };
 
+    private final SoundTile[] vowelSounds = new SoundTile[]{
+            new SoundTile("æ", "cat", "A abierta", "ae"),
+            new SoundTile("ʌ", "cup", "A central", "uh"),
+            new SoundTile("ɪ", "sit", "I corta", "i_short"),
+            new SoundTile("iː", "see", "I larga", "i_long"),
+            new SoundTile("e", "bed", "E corta", "e_short"),
+            new SoundTile("ɑː", "car", "A larga", "a_long"),
+            new SoundTile("ɒ", "hot", "O corta", "o_short"),
+            new SoundTile("ɔː", "saw", "O larga", "o_long"),
+            new SoundTile("ʊ", "book", "U corta", "u_short"),
+            new SoundTile("uː", "food", "U larga", "u_long"),
+            new SoundTile("ə", "about", "Schwa", "schwa"),
+            new SoundTile("ɜː", "bird", "ER larga", "er_long"),
+            new SoundTile("eɪ", "day", "Diptongo", "ay"),
+            new SoundTile("aɪ", "time", "Diptongo", "ai"),
+            new SoundTile("ɔɪ", "boy", "Diptongo", "oi"),
+            new SoundTile("aʊ", "cow", "Diptongo", "au"),
+            new SoundTile("əʊ", "go", "Diptongo", "ou")
+    };
+
+    private final SoundTile[] consonantSounds = new SoundTile[]{
+            new SoundTile("b", "book", "B", "b"),
+            new SoundTile("tʃ", "chair", "CH", "ch"),
+            new SoundTile("d", "day", "D", "d"),
+            new SoundTile("f", "fish", "F", "f"),
+            new SoundTile("g", "go", "G", "g"),
+            new SoundTile("h", "home", "H aspirada", "h"),
+            new SoundTile("dʒ", "job", "J inglesa", "dj"),
+            new SoundTile("k", "key", "K", "k"),
+            new SoundTile("l", "lion", "L", "l"),
+            new SoundTile("m", "moon", "M", "m"),
+            new SoundTile("n", "nose", "N", "n"),
+            new SoundTile("ŋ", "sing", "NG", "ng"),
+            new SoundTile("p", "pig", "P", "p"),
+            new SoundTile("r", "red", "R inglesa", "r"),
+            new SoundTile("s", "see", "S", "s"),
+            new SoundTile("ʃ", "shoe", "SH", "sh"),
+            new SoundTile("t", "time", "T", "t"),
+            new SoundTile("θ", "think", "TH sorda", "th_voiceless"),
+            new SoundTile("ð", "this", "TH sonora", "th_voiced"),
+            new SoundTile("v", "van", "V", "v"),
+            new SoundTile("w", "water", "W", "w"),
+            new SoundTile("j", "yes", "Y", "y"),
+            new SoundTile("z", "zoo", "Z", "z"),
+            new SoundTile("ʒ", "vision", "ZH", "zh")
+    };
+
+    private final SoundPair[] soundPairs = new SoundPair[]{
+            new SoundPair("cat", "cut", "æ", "ae"),
+            new SoundPair("bed", "bad", "e", "e_short"),
+            new SoundPair("full", "fool", "ʊ", "u_short"),
+            new SoundPair("sit", "seat", "ɪ", "i_short"),
+            new SoundPair("hat", "hot", "æ", "ae"),
+            new SoundPair("cap", "cup", "æ", "ae"),
+            new SoundPair("pin", "pen", "ɪ", "i_short"),
+            new SoundPair("look", "luck", "ʊ", "u_short"),
+            new SoundPair("fan", "van", "f", "f"),
+            new SoundPair("thin", "sin", "θ", "th_voiceless"),
+            new SoundPair("three", "tree", "θ", "th_voiceless"),
+            new SoundPair("rice", "rise", "s", "s"),
+            new SoundPair("light", "right", "l", "l"),
+            new SoundPair("west", "vest", "w", "w"),
+            new SoundPair("berry", "very", "b", "b"),
+            new SoundPair("coat", "goat", "k", "k"),
+            new SoundPair("cheap", "jeep", "tʃ", "ch"),
+            new SoundPair("think", "sink", "θ", "th_voiceless"),
+            new SoundPair("day", "they", "d", "d"),
+            new SoundPair("fine", "vine", "f", "f")
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -336,62 +428,59 @@ public class MainActivity extends Activity {
         SharedPreferences.Editor e = prefs.edit();
         if (!prefs.contains("hearts")) e.putInt("hearts", 5);
         if (!prefs.contains("daily_minutes")) e.putInt("daily_minutes", 10);
+        if (!prefs.contains("joined_at")) e.putLong("joined_at", System.currentTimeMillis());
         e.apply();
     }
 
     private void showSplash() {
-        setRootWithArt(R.drawable.london_route_art);
-        View shade = new View(this);
-        shade.setBackgroundColor(Color.argb(80, 0, 73, 150));
-        root.addView(shade, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-
-        LinearLayout box = cardColumn();
-        box.setGravity(Gravity.CENTER);
-        box.setPadding(dp(26), dp(24), dp(26), dp(24));
-        ImageView logo = new ImageView(this);
-        logo.setImageResource(R.mipmap.ic_launcher);
-        logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        LinearLayout.LayoutParams logoLp = new LinearLayout.LayoutParams(dp(86), dp(86));
-        logoLp.gravity = Gravity.CENTER_HORIZONTAL;
-        logoLp.bottomMargin = dp(8);
-        box.addView(logo, logoLp);
-        TextView title = label("BlueLingo", 31, BLUE_DARK, true);
-        title.setGravity(Gravity.CENTER);
-        box.addView(title);
-        TextView sub = label("Aprende Gratis Inglés · Tu aventura empieza aquí", 15, MUTED, false);
-        sub.setGravity(Gravity.CENTER);
-        sub.setPadding(0, dp(8), 0, dp(18));
-        box.addView(sub);
-
-        ProgressBar loading = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
-        loading.setIndeterminate(false);
-        loading.setMax(100);
-        loading.setProgress(4);
-        loading.getProgressDrawable().setTint(LIME);
-        box.addView(loading, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(18)));
-        TextView loadingText = label("Cargando tu ruta…", 13, BLUE, true);
-        loadingText.setGravity(Gravity.CENTER);
-        loadingText.setPadding(0, dp(10), 0, 0);
-        box.addView(loadingText);
-
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
-        lp.leftMargin = dp(24);
-        lp.rightMargin = dp(24);
-        root.addView(box, lp);
-
-        final int[] progress = {4};
-        Runnable ticker = new Runnable() {
-            @Override public void run() {
-                progress[0] = Math.min(100, progress[0] + 8);
-                loading.setProgress(progress[0]);
-                if (progress[0] < 100) loading.postDelayed(this, 100);
-            }
-        };
-        loading.post(ticker);
-        root.postDelayed(() -> {
+        root = new FrameLayout(this);
+        root.setBackgroundColor(Color.BLACK);
+        setContentView(root);
+        playStartupVideo(() -> {
+            initialSplashFinished = true;
             if (prefs.getBoolean("onboarded_v7", false)) showRoute();
             else showOnboardingUsername();
-        }, 1600);
+        });
+    }
+
+    private void playStartupVideo(Runnable after) {
+        if (startupVideoVisible) return;
+        startupVideoVisible = true;
+
+        FrameLayout overlay = new FrameLayout(this);
+        overlay.setBackgroundColor(Color.BLACK);
+        overlay.setTag("startup_video_overlay");
+        root.addView(overlay, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        startupVideo = new VideoView(this);
+        startupVideo.setBackgroundColor(Color.BLACK);
+        overlay.addView(startupVideo, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.CENTER));
+
+        Uri uri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.startup);
+        startupVideo.setVideoURI(uri);
+        startupVideo.setOnPreparedListener(mp -> {
+            mp.setLooping(false);
+            mp.setVolume(1f, 1f);
+            try {
+                if (startupVideoPosition > 0) startupVideo.seekTo(startupVideoPosition);
+                startupVideo.start();
+            } catch (Throwable ignored) {}
+        });
+        startupVideo.setOnCompletionListener(mp -> finishStartupVideo(overlay, after));
+        startupVideo.setOnErrorListener((mp, what, extra) -> {
+            finishStartupVideo(overlay, after);
+            return true;
+        });
+        startupVideo.start();
+    }
+
+    private void finishStartupVideo(FrameLayout overlay, Runnable after) {
+        try { if (startupVideo != null) startupVideo.stopPlayback(); } catch (Throwable ignored) {}
+        try { if (overlay.getParent() != null) ((ViewGroup) overlay.getParent()).removeView(overlay); } catch (Throwable ignored) {}
+        startupVideo = null;
+        startupVideoVisible = false;
+        startupVideoPosition = 0;
+        if (after != null) after.run();
     }
 
     private LinearLayout onboardingPage(String step, String title, String subtitle) {
@@ -416,7 +505,7 @@ public class MainActivity extends Activity {
     }
 
     private void showOnboardingUsername() {
-        LinearLayout card = onboardingPage("PASO 1 DE 5", "Crea tu nombre de usuario", "Este será tu nombre dentro de la app y en las ligas cuando conectemos el ranking online.");
+        LinearLayout card = onboardingPage("PASO 1 DE 5", "Crea tu nombre de usuario", "Este será tu nombre dentro de la app y en tu perfil de aprendizaje.");
         EditText input = new EditText(this);
         input.setSingleLine(true);
         input.setTextSize(20);
@@ -484,7 +573,7 @@ public class MainActivity extends Activity {
 
     private void showOnboardingNotifications() {
         LinearLayout card = onboardingPage("PASO 5 DE 5", "Activa tus recordatorios", "Podemos avisarte una vez al día para que no pierdas tu racha. Tú decides si permites las notificaciones.");
-        card.addView(label("🔔  Recordatorio diario de estudio\n🔥  Aviso para proteger tu racha\n🏆  Futuras alertas de liga y logros", 16, BLUE_DARK, true), matchWrapMargin(0, 0, 0, 18));
+        card.addView(label("🔔  Recordatorio diario de estudio\n🔥  Aviso para proteger tu racha\n🏆  Futuras alertas de retos y logros", 16, BLUE_DARK, true), matchWrapMargin(0, 0, 0, 18));
         TextView allow = actionButton("PERMITIR NOTIFICACIONES", LIME, BLUE_DARK);
         allow.setOnClickListener(v -> requestNotificationPermission(true));
         card.addView(allow, matchWrapMargin(0, 0, 0, 10));
@@ -648,7 +737,7 @@ public class MainActivity extends Activity {
 
         int xp = prefs.getInt("xp", 0);
         String username = prefs.getString("username", "@Usuario");
-        TextView level = label("🥉  Nivel " + levelForXp(xp) + " · Bronce\n" + username + " · " + xp + " XP", 14, Color.WHITE, true);
+        TextView level = label("⭐  Nivel " + levelForXp(xp) + "\n" + username + " · " + xp + " XP", 14, Color.WHITE, true);
         hud.addView(level, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         TextView streak = pill("🔥 " + prefs.getInt("streak", 0), Color.argb(225, 31, 88, 157), Color.WHITE);
         hud.addView(streak, wrapMargin(5, 0, 0, 0));
@@ -720,26 +809,25 @@ public class MainActivity extends Activity {
         LinearLayout nav = new LinearLayout(this);
         nav.setOrientation(LinearLayout.HORIZONTAL);
         nav.setGravity(Gravity.CENTER);
-        nav.setPadding(dp(4), dp(7), dp(4), dp(7));
-        nav.setBackground(roundRect(Color.argb(248, 255, 255, 255), 22, BORDER, 1));
+        nav.setPadding(dp(5), dp(7), dp(5), dp(7));
+        nav.setBackground(roundRect(Color.argb(250, 255, 255, 255), 22, BORDER, 1));
         nav.setElevation(dp(12));
 
-        String[] icons = {"🗺️", "🧠", "🥇", "🏆", "👤"};
-        String[] labels = {"Ruta", "Practicar", "Liga", "Logros", "Perfil"};
-        for (int i = 0; i < 5; i++) {
+        String[] icons = {"🗺️", "🧠", "👄", "👤"};
+        String[] labels = {"Ruta", "Practicar", "Sonidos", "Perfil"};
+        for (int i = 0; i < 4; i++) {
             final int idx = i;
             TextView item = label(icons[i] + "\n" + labels[i], 13, i == selected ? BLUE : BLUE_DARK, true);
             item.setGravity(Gravity.CENTER);
-            item.setPadding(dp(6), dp(6), dp(6), dp(6));
+            item.setPadding(dp(6), dp(5), dp(6), dp(5));
             if (i == selected) item.setBackground(roundRect(Color.rgb(232, 246, 255), 16, Color.TRANSPARENT, 0));
             item.setOnClickListener(v -> {
                 if (idx == 0) showRoute();
                 else if (idx == 1) showPractice();
-                else if (idx == 2) showLeague();
-                else if (idx == 3) showAchievements();
+                else if (idx == 2) showSounds();
                 else showProfile();
             });
-            nav.addView(item, new LinearLayout.LayoutParams(0, dp(58), 1f));
+            nav.addView(item, new LinearLayout.LayoutParams(0, dp(60), 1f));
         }
         return nav;
     }
@@ -767,7 +855,7 @@ public class MainActivity extends Activity {
         TextView title = label("Aprende, escucha y repite", 28, BLUE_DARK, true);
         title.setPadding(0, dp(4), 0, 0);
         hero.addView(title);
-        TextView copy = label("Todo el contenido está integrado en BlueLingo. No necesitas abrir la web para estudiar pronunciación, vocabulario o lecciones.", 16, MUTED, false);
+        TextView copy = label("Todo el contenido está integrado en Bluelingo. No necesitas abrir la web para estudiar pronunciación, vocabulario o lecciones.", 16, MUTED, false);
         copy.setPadding(0, dp(7), 0, dp(14));
         hero.addView(copy);
 
@@ -1053,7 +1141,7 @@ public class MainActivity extends Activity {
 
         LinearLayout coach = cardColumn();
         coach.setPadding(dp(18), dp(17), dp(18), dp(17));
-        coach.addView(label("🎯 Método BlueLingo", 18, BLUE_DARK, true));
+        coach.addView(label("🎯 Método Bluelingo", 18, BLUE_DARK, true));
         TextView coachText = label("1. Escucha normal.  2. Escucha lento.  3. Repite tres veces mirando la palabra.  4. Intenta decirla sin mirar.", 14, MUTED, false);
         coachText.setPadding(0, dp(6), 0, 0);
         coach.addView(coachText);
@@ -1151,105 +1239,279 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void showLeague() {
+    private void showSounds() {
+        inSoundQuiz = false;
         currentLesson = -1;
+        subtitleText = null;
+        subtitleCard = null;
         setRootWithArt(R.drawable.london_route_art);
+
         LinearLayout page = pageColumn();
         page.addView(buildHud());
 
         ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        scroll.setClipToPadding(false);
         LinearLayout body = new LinearLayout(this);
         body.setOrientation(LinearLayout.VERTICAL);
-        body.setPadding(dp(6), dp(12), dp(6), dp(18));
-        scroll.addView(body);
+        body.setPadding(dp(2), dp(10), dp(2), dp(28));
+        scroll.addView(body, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        int xp = prefs.getInt("xp", 0);
-        String league = leagueForXp(xp);
-        int next = nextLeagueXp(xp);
         LinearLayout hero = cardColumn();
-        hero.setGravity(Gravity.CENTER_HORIZONTAL);
-        hero.setPadding(dp(22), dp(22), dp(22), dp(22));
-        hero.addView(label("🥇", 52, BLUE_DARK, true));
-        TextView title = label("Liga " + league, 29, BLUE_DARK, true);
-        title.setGravity(Gravity.CENTER);
+        hero.setPadding(dp(22), dp(20), dp(22), dp(20));
+        hero.addView(label("👄  ENTRENADOR DE SONIDOS", 13, BLUE, true));
+        TextView title = label("¡Mejora tu pronunciación del inglés!", 28, BLUE_DARK, true);
+        title.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
+        title.setPadding(0, dp(5), 0, 0);
         hero.addView(title);
-        TextView user = label(prefs.getString("username", "@Usuario") + " · " + xp + " XP", 17, BLUE, true);
-        user.setGravity(Gravity.CENTER);
-        user.setPadding(0, dp(6), 0, dp(10));
-        hero.addView(user);
-        ProgressBar progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
-        progress.setMax(Math.max(1, next));
-        progress.setProgress(Math.min(xp, next));
-        progress.getProgressDrawable().setTint(LIME);
-        hero.addView(progress, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(18)));
-        TextView toNext = label(next > xp ? (next - xp) + " XP para la siguiente liga" : "Liga máxima alcanzada", 13, MUTED, true);
-        toNext.setGravity(Gravity.CENTER);
-        toNext.setPadding(0, dp(8), 0, 0);
-        hero.addView(toNext);
-        body.addView(hero, matchWrapMargin(0, 0, 0, 12));
+        TextView copy = label("Entrena tu oído, distingue sonidos parecidos y aprende a pronunciar palabras con más claridad.", 16, MUTED, false);
+        copy.setPadding(0, dp(8), 0, dp(16));
+        hero.addView(copy);
+        TextView start = actionButton("▶  EMPEZAR LECCIÓN", Color.rgb(72, 184, 238), Color.WHITE);
+        start.setOnClickListener(v -> startSoundQuiz());
+        hero.addView(start);
+        body.addView(hero, matchWrapMargin(0, 0, 0, 14));
 
-        body.addView(statCard("🏅 Puntuación competitiva", competitiveScore() + " puntos"));
-        body.addView(statCard("✅ Lecciones completadas", completedCount() + "/" + lessons.length));
-        body.addView(statCard("🔥 Racha actual", prefs.getInt("streak", 0) + " días"));
-        LinearLayout online = cardColumn();
-        online.setPadding(dp(20), dp(18), dp(20), dp(18));
-        online.addView(label("🌐 Ranking entre usuarios", 21, BLUE_DARK, true));
-        TextView explanation = label("Tu perfil y puntuación ya están preparados. Para comparar posiciones con personas de otros teléfonos necesitamos conectar un backend seguro. No mostramos rivales inventados como si fueran reales.", 15, MUTED, false);
-        explanation.setPadding(0, dp(7), 0, 0);
-        online.addView(explanation);
-        body.addView(online, matchWrapMargin(0, 0, 0, 12));
+        LinearLayout progressCard = cardColumn();
+        progressCard.setPadding(dp(18), dp(15), dp(18), dp(15));
+        int attempts = prefs.getInt("sound_attempts", 0);
+        int best = prefs.getInt("sound_best", 0);
+        progressCard.addView(label("🎧 Tu progreso de pronunciación", 19, BLUE_DARK, true));
+        TextView stats = label(attempts + " ejercicios completados · Mejor sesión: " + best + "/10", 14, MUTED, false);
+        stats.setPadding(0, dp(5), 0, 0);
+        progressCard.addView(stats);
+        body.addView(progressCard, matchWrapMargin(0, 0, 0, 16));
+
+        body.addView(label("Vocales", 25, BLUE_DARK, true), matchWrapMargin(4, 0, 0, 10));
+        addSoundGrid(body, vowelSounds);
+
+        body.addView(label("Consonantes", 25, BLUE_DARK, true), matchWrapMargin(4, 22, 0, 10));
+        addSoundGrid(body, consonantSounds);
 
         page.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         page.addView(bottomNav(2));
         root.addView(page);
     }
 
-    private int competitiveScore() {
-        return prefs.getInt("xp", 0) + completedCount() * 100 + prefs.getInt("streak", 0) * 25;
+    private void addSoundGrid(LinearLayout body, SoundTile[] sounds) {
+        for (int i = 0; i < sounds.length; i += 3) {
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            for (int j = 0; j < 3; j++) {
+                int pos = i + j;
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(126), 1f);
+                if (j > 0) lp.leftMargin = dp(7);
+                if (pos < sounds.length) row.addView(soundTileView(sounds[pos]), lp);
+                else {
+                    View spacer = new View(this);
+                    row.addView(spacer, lp);
+                }
+            }
+            body.addView(row, matchWrapMargin(0, 0, 0, 8));
+        }
     }
 
-    private String leagueForXp(int xp) {
-        if (xp < 500) return "Bronce";
-        if (xp < 1200) return "Plata";
-        if (xp < 2500) return "Oro";
-        if (xp < 5000) return "Zafiro";
-        return "Diamante";
+    private View soundTileView(SoundTile sound) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setGravity(Gravity.CENTER_HORIZONTAL);
+        card.setPadding(dp(8), dp(12), dp(8), dp(9));
+        card.setBackground(roundRect(Color.argb(248, 255, 255, 255), 20, Color.rgb(169, 211, 236), 2));
+        card.setElevation(dp(3));
+
+        TextView ipa = label(sound.symbol, 24, BLUE_DARK, true);
+        ipa.setGravity(Gravity.CENTER);
+        card.addView(ipa);
+        TextView example = label(sound.example, 13, MUTED, false);
+        example.setGravity(Gravity.CENTER);
+        example.setPadding(0, dp(2), 0, dp(7));
+        card.addView(example);
+
+        ProgressBar p = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        p.setMax(5);
+        p.setProgress(Math.min(5, prefs.getInt("sound_skill_" + sound.key, 0)));
+        p.getProgressDrawable().setTint(GREEN);
+        card.addView(p, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(9)));
+        card.setOnClickListener(v -> {
+            pulse(card);
+            speakAtRate(sound.example, 0.82f, 1);
+            int skill = Math.min(5, prefs.getInt("sound_skill_" + sound.key, 0) + 1);
+            prefs.edit().putInt("sound_skill_" + sound.key, skill).apply();
+            p.setProgress(skill);
+        });
+        return card;
     }
 
-    private int nextLeagueXp(int xp) {
-        if (xp < 500) return 500;
-        if (xp < 1200) return 1200;
-        if (xp < 2500) return 2500;
-        if (xp < 5000) return 5000;
-        return Math.max(5000, xp);
+    private void startSoundQuiz() {
+        soundQuizQuestion = 0;
+        soundQuizCorrect = 0;
+        soundQuizQueue.clear();
+        soundQuizQueue.addAll(Arrays.asList(soundPairs));
+        Collections.shuffle(soundQuizQueue, random);
+        while (soundQuizQueue.size() > 10) soundQuizQueue.remove(soundQuizQueue.size() - 1);
+        showSoundQuizQuestion();
     }
 
-    private void showAchievements() {
+    private void showSoundQuizQuestion() {
+        inSoundQuiz = true;
+        if (soundQuizQuestion >= soundQuizQueue.size()) {
+            showSoundQuizResult();
+            return;
+        }
+        currentSoundPair = soundQuizQueue.get(soundQuizQuestion);
+        selectedSoundAnswer = "";
+        setRootWithArt(R.drawable.london_exercise_art);
+
+        LinearLayout page = pageColumn();
+        page.addView(nativeBackBar("Entrenamiento de sonidos", () -> showSounds()));
+
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(8), dp(12), dp(8), dp(14));
+        page.addView(content, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+
+        ProgressBar progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        progress.setMax(soundQuizQueue.size());
+        progress.setProgress(soundQuizQuestion + 1);
+        progress.getProgressDrawable().setTint(LIME);
+        content.addView(progress, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(16)));
+
+        TextView counter = label("SONIDO " + (soundQuizQuestion + 1) + " DE " + soundQuizQueue.size(), 12, BLUE, true);
+        counter.setPadding(0, dp(10), 0, 0);
+        content.addView(counter);
+        TextView title = label("Elige lo que escuchas", 28, BLUE_DARK, true);
+        title.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
+        title.setPadding(0, dp(7), 0, dp(14));
+        content.addView(title);
+
+        TextView speaker = label("🔊", 54, BLUE_DARK, true);
+        speaker.setGravity(Gravity.CENTER);
+        speaker.setContentDescription("Repetir audio");
+        speaker.setBackground(roundRect(Color.rgb(72, 184, 238), 28, Color.rgb(34, 145, 211), 2));
+        speaker.setElevation(dp(7));
+        speaker.setOnClickListener(v -> speakAtRate(currentSoundPair.correct, 0.82f, 1));
+        LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(dp(148), dp(148));
+        sp.gravity = Gravity.CENTER_HORIZONTAL;
+        sp.bottomMargin = dp(24);
+        content.addView(speaker, sp);
+
+        boolean correctFirst = random.nextBoolean();
+        String a = correctFirst ? currentSoundPair.correct : currentSoundPair.distractor;
+        String b = correctFirst ? currentSoundPair.distractor : currentSoundPair.correct;
+
+        LinearLayout options = new LinearLayout(this);
+        options.setOrientation(LinearLayout.HORIZONTAL);
+        soundOptionA = soundChoice(a);
+        soundOptionB = soundChoice(b);
+        soundOptionA.setOnClickListener(v -> chooseSoundAnswer(soundOptionA, soundOptionB));
+        soundOptionB.setOnClickListener(v -> chooseSoundAnswer(soundOptionB, soundOptionA));
+        LinearLayout.LayoutParams opA = new LinearLayout.LayoutParams(0, dp(170), 1f);
+        opA.rightMargin = dp(7);
+        LinearLayout.LayoutParams opB = new LinearLayout.LayoutParams(0, dp(170), 1f);
+        opB.leftMargin = dp(7);
+        options.addView(soundOptionA, opA);
+        options.addView(soundOptionB, opB);
+        content.addView(options);
+
+        soundFeedback = label("", 15, MUTED, true);
+        soundFeedback.setGravity(Gravity.CENTER);
+        soundFeedback.setPadding(0, dp(12), 0, dp(8));
+        content.addView(soundFeedback);
+
+        soundCheckButton = actionButton("COMPROBAR", LIME, BLUE_DARK);
+        soundCheckButton.setOnClickListener(v -> checkSoundAnswer());
+        page.addView(soundCheckButton, matchWrapMargin(8, 0, 8, 12));
+        root.addView(page);
+
+        root.postDelayed(() -> {
+            if (currentSoundPair != null) speakAtRate(currentSoundPair.correct, 0.82f, 1);
+        }, 430);
+    }
+
+    private TextView soundChoice(String word) {
+        TextView choice = label(word, 25, BLUE_DARK, true);
+        choice.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
+        choice.setGravity(Gravity.CENTER);
+        choice.setBackground(roundRect(Color.argb(249, 255, 255, 255), 22, BORDER, 2));
+        choice.setElevation(dp(4));
+        return choice;
+    }
+
+    private void chooseSoundAnswer(TextView selected, TextView other) {
+        selectedSoundAnswer = selected.getText().toString();
+        selected.setTextColor(BLUE_DARK);
+        selected.setBackground(roundRect(Color.rgb(224, 245, 255), 22, Color.rgb(72, 184, 238), 3));
+        other.setTextColor(BLUE_DARK);
+        other.setBackground(roundRect(Color.argb(249, 255, 255, 255), 22, BORDER, 2));
+    }
+
+    private void checkSoundAnswer() {
+        if (currentSoundPair == null) return;
+        if ("SIGUIENTE".contentEquals(soundCheckButton.getText())) {
+            soundQuizQuestion++;
+            showSoundQuizQuestion();
+            return;
+        }
+        if (selectedSoundAnswer.isEmpty()) {
+            Toast.makeText(this, "Elige una respuesta primero", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        boolean correct = selectedSoundAnswer.equalsIgnoreCase(currentSoundPair.correct);
+        if (correct) {
+            soundQuizCorrect++;
+            soundFeedback.setText("✓ ¡Correcto!  /" + currentSoundPair.soundSymbol + "/");
+            soundFeedback.setTextColor(GREEN);
+            int skill = Math.min(5, prefs.getInt("sound_skill_" + currentSoundPair.skillKey, 0) + 1);
+            prefs.edit()
+                    .putInt("sound_skill_" + currentSoundPair.skillKey, skill)
+                    .putInt("xp", prefs.getInt("xp", 0) + 5)
+                    .apply();
+        } else {
+            soundFeedback.setText("✕ Era “" + currentSoundPair.correct + "”. Escúchalo otra vez.");
+            soundFeedback.setTextColor(RED);
+            speakAtRate(currentSoundPair.correct, 0.68f, 1);
+        }
+        prefs.edit().putInt("sound_attempts", prefs.getInt("sound_attempts", 0) + 1).apply();
+        soundCheckButton.setText("SIGUIENTE");
+        soundCheckButton.setBackground(roundRect(correct ? GREEN : Color.rgb(72, 184, 238), 18, Color.argb(80, 0, 0, 0), 1));
+        soundCheckButton.setTextColor(Color.WHITE);
+    }
+
+    private void showSoundQuizResult() {
+        inSoundQuiz = true;
+        int previousBest = prefs.getInt("sound_best", 0);
+        if (soundQuizCorrect > previousBest) prefs.edit().putInt("sound_best", soundQuizCorrect).apply();
         setRootWithArt(R.drawable.london_route_art);
         LinearLayout page = pageColumn();
-        page.addView(buildHud());
-        ScrollView scroll = new ScrollView(this);
         LinearLayout body = new LinearLayout(this);
         body.setOrientation(LinearLayout.VERTICAL);
-        body.setPadding(dp(6), dp(12), dp(6), dp(18));
-        scroll.addView(body);
-        body.addView(statCard("🏆 Primer paso", prefs.getBoolean("lesson_0", false) ? "COMPLETADO" : "Completa Primeros pasos"));
-        body.addView(statCard("🔥 Constancia", prefs.getInt("streak", 0) + " días de racha"));
-        body.addView(statCard("⭐ Experiencia", prefs.getInt("xp", 0) + " XP acumulados"));
-        body.addView(statCard("🇬🇧 Ruta inicial", completedCount() + "/" + lessons.length + " lecciones completadas"));
-        page.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
-        page.addView(bottomNav(3));
-        root.addView(page);
-    }
+        body.setGravity(Gravity.CENTER);
+        body.setPadding(dp(18), dp(20), dp(18), dp(20));
+        page.addView(body, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
-    private View statCard(String title, String sub) {
         LinearLayout card = cardColumn();
-        card.setPadding(dp(20), dp(16), dp(20), dp(16));
-        card.addView(label(title, 21, BLUE_DARK, true));
-        TextView s = label(sub, 15, MUTED, false);
-        s.setPadding(0, dp(5), 0, 0);
-        card.addView(s);
-        return withMargin(card, 0, 0, 0, 12);
+        card.setGravity(Gravity.CENTER_HORIZONTAL);
+        card.setPadding(dp(24), dp(28), dp(24), dp(28));
+        card.addView(label(soundQuizCorrect >= 8 ? "🏆" : "🎧", 62, BLUE_DARK, true));
+        TextView title = label(soundQuizCorrect >= 8 ? "¡Gran oído!" : "Sesión completada", 30, BLUE_DARK, true);
+        title.setGravity(Gravity.CENTER);
+        card.addView(title);
+        TextView score = label(soundQuizCorrect + " de " + soundQuizQueue.size() + " respuestas correctas", 18, BLUE, true);
+        score.setGravity(Gravity.CENTER);
+        score.setPadding(0, dp(8), 0, dp(4));
+        card.addView(score);
+        TextView xp = label("+" + (soundQuizCorrect * 5) + " XP por respuestas correctas", 15, GREEN, true);
+        xp.setGravity(Gravity.CENTER);
+        card.addView(xp);
+        TextView again = actionButton("REPETIR ENTRENAMIENTO", LIME, BLUE_DARK);
+        again.setOnClickListener(v -> startSoundQuiz());
+        card.addView(again, matchWrapMargin(0, 20, 0, 9));
+        TextView back = actionButton("VOLVER A SONIDOS", Color.WHITE, BLUE);
+        back.setBackground(roundRect(Color.WHITE, 18, BLUE, 2));
+        back.setOnClickListener(v -> showSounds());
+        card.addView(back);
+        body.addView(card, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        root.addView(page);
     }
 
     private int completedCount() {
@@ -1259,56 +1521,141 @@ public class MainActivity extends Activity {
     }
 
     private void showProfile() {
+        currentLesson = -1;
         setRootWithArt(R.drawable.london_route_art);
         LinearLayout page = pageColumn();
-        page.addView(buildHud());
         ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
         LinearLayout body = new LinearLayout(this);
         body.setOrientation(LinearLayout.VERTICAL);
-        body.setPadding(dp(4), dp(12), dp(4), dp(18));
+        body.setPadding(dp(2), dp(8), dp(2), dp(28));
         scroll.addView(body);
 
-        LinearLayout profile = cardColumn();
-        profile.setGravity(Gravity.CENTER_HORIZONTAL);
-        profile.setPadding(dp(24), dp(24), dp(24), dp(24));
-        profile.addView(label("👤", 52, BLUE_DARK, true));
-        TextView name = label(prefs.getString("username", "@Usuario"), 27, BLUE_DARK, true);
-        name.setGravity(Gravity.CENTER);
-        profile.addView(name);
-        String levelName = prefs.getString("english_level", "Principiante");
-        String goal = prefs.getString("goal", "Hablar");
-        int daily = prefs.getInt("daily_minutes", 10);
-        TextView personal = label(levelName + " · Objetivo: " + goal + "\nMeta diaria: " + daily + " min", 15, MUTED, false);
-        personal.setGravity(Gravity.CENTER);
-        personal.setPadding(0, dp(8), 0, dp(12));
-        profile.addView(personal);
-        TextView stats = label("Nivel " + levelForXp(prefs.getInt("xp", 0)) + " · " + prefs.getInt("xp", 0) + " XP\n" + completedCount() + " lecciones · " + leagueForXp(prefs.getInt("xp", 0)), 17, BLUE, true);
-        stats.setGravity(Gravity.CENTER);
-        profile.addView(stats);
-        body.addView(profile, matchWrapMargin(0, 0, 0, 12));
+        LinearLayout header = cardColumn();
+        header.setPadding(dp(20), dp(16), dp(20), dp(22));
+
+        LinearLayout top = new LinearLayout(this);
+        top.setOrientation(LinearLayout.HORIZONTAL);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+        TextView profileName = label(prefs.getString("username", "@Usuario").replace("@", ""), 26, BLUE_DARK, true);
+        profileName.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
+        top.addView(profileName, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        TextView share = label("↗", 28, BLUE_DARK, true);
+        share.setGravity(Gravity.CENTER);
+        share.setOnClickListener(v -> shareProfile());
+        top.addView(share, new LinearLayout.LayoutParams(dp(48), dp(48)));
+        TextView settings = label("⚙", 28, BLUE_DARK, true);
+        settings.setGravity(Gravity.CENTER);
+        settings.setOnClickListener(v -> showEditProfile());
+        top.addView(settings, new LinearLayout.LayoutParams(dp(48), dp(48)));
+        header.addView(top);
+
+        ImageView avatar = new ImageView(this);
+        avatar.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        avatar.setBackground(circleDrawable(Color.WHITE, BLUE, 4));
+        avatar.setClipToOutline(true);
+        String avatarUri = prefs.getString("avatar_uri", "");
+        if (!avatarUri.isEmpty()) {
+            try { avatar.setImageURI(Uri.parse(avatarUri)); }
+            catch (Throwable ignored) { avatar.setImageResource(R.drawable.app_icon_512); }
+        } else avatar.setImageResource(R.drawable.app_icon_512);
+        avatar.setOnClickListener(v -> chooseAvatar());
+        LinearLayout.LayoutParams avatarLp = new LinearLayout.LayoutParams(dp(142), dp(142));
+        avatarLp.gravity = Gravity.CENTER_HORIZONTAL;
+        avatarLp.topMargin = dp(12);
+        avatarLp.bottomMargin = dp(10);
+        header.addView(avatar, avatarLp);
+
+        TextView handle = label(prefs.getString("username", "@Usuario"), 20, BLUE, true);
+        handle.setGravity(Gravity.CENTER);
+        header.addView(handle);
+        TextView meta = label(prefs.getString("english_level", "Principiante") + " · " + prefs.getString("goal", "Hablar") + " · " + prefs.getInt("daily_minutes", 10) + " min/día", 14, MUTED, false);
+        meta.setGravity(Gravity.CENTER);
+        meta.setPadding(0, dp(5), 0, dp(3));
+        header.addView(meta);
+        String joinedYear = new SimpleDateFormat("yyyy", Locale.getDefault()).format(new Date(prefs.getLong("joined_at", System.currentTimeMillis())));
+        TextView joined = label("Miembro desde " + joinedYear, 12, MUTED, false);
+        joined.setGravity(Gravity.CENTER);
+        joined.setPadding(0, 0, 0, dp(12));
+        header.addView(joined);
+        TextView changeAvatar = actionButton("📷  CAMBIAR AVATAR", Color.WHITE, BLUE);
+        changeAvatar.setBackground(roundRect(Color.WHITE, 16, BLUE, 2));
+        changeAvatar.setOnClickListener(v -> chooseAvatar());
+        header.addView(changeAvatar);
+        body.addView(header, matchWrapMargin(0, 0, 0, 12));
+
+        LinearLayout stats = cardColumn();
+        stats.setPadding(dp(16), dp(17), dp(16), dp(17));
+        stats.addView(label("RESUMEN", 13, MUTED, true));
+        LinearLayout row1 = new LinearLayout(this);
+        row1.setOrientation(LinearLayout.HORIZONTAL);
+        row1.addView(profileStat("🔥", prefs.getInt("streak", 0) + " días", "Racha"), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        row1.addView(profileStat("⚡", prefs.getInt("xp", 0) + " XP", "Experiencia"), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        stats.addView(row1, matchWrapMargin(0, 10, 0, 4));
+        LinearLayout row2 = new LinearLayout(this);
+        row2.setOrientation(LinearLayout.HORIZONTAL);
+        row2.addView(profileStat("📘", completedCount() + "/" + lessons.length, "Lecciones"), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        row2.addView(profileStat("👄", prefs.getInt("sound_attempts", 0) + "", "Sonidos practicados"), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        stats.addView(row2);
+        body.addView(stats, matchWrapMargin(0, 0, 0, 12));
+
+        LinearLayout levelCard = cardColumn();
+        levelCard.setPadding(dp(18), dp(16), dp(18), dp(16));
+        int xp = prefs.getInt("xp", 0);
+        int level = levelForXp(xp);
+        int base = (level - 1) * 150;
+        int progressXp = xp - base;
+        levelCard.addView(label("⭐ Nivel " + level, 21, BLUE_DARK, true));
+        TextView next = label(Math.max(0, 150 - progressXp) + " XP para el siguiente nivel", 14, MUTED, false);
+        next.setPadding(0, dp(4), 0, dp(8));
+        levelCard.addView(next);
+        ProgressBar levelProgress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        levelProgress.setMax(150);
+        levelProgress.setProgress(Math.min(150, progressXp));
+        levelProgress.getProgressDrawable().setTint(GREEN);
+        levelCard.addView(levelProgress, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(13)));
+        body.addView(levelCard, matchWrapMargin(0, 0, 0, 12));
+
+        LinearLayout achievements = cardColumn();
+        achievements.setPadding(dp(18), dp(16), dp(18), dp(18));
+        achievements.addView(label("🏅 LOGROS", 19, BLUE_DARK, true));
+        TextView achCopy = label("Desbloquea insignias aprendiendo y practicando sonidos.", 14, MUTED, false);
+        achCopy.setPadding(0, dp(4), 0, dp(12));
+        achievements.addView(achCopy);
+        LinearLayout ar1 = new LinearLayout(this);
+        ar1.setOrientation(LinearLayout.HORIZONTAL);
+        ar1.addView(achievementTile("🚀", "Primer paso", prefs.getBoolean("lesson_0", false)), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        LinearLayout.LayoutParams gap = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f); gap.leftMargin = dp(8);
+        ar1.addView(achievementTile("⚡", "100 XP", xp >= 100), gap);
+        achievements.addView(ar1);
+        LinearLayout ar2 = new LinearLayout(this);
+        ar2.setOrientation(LinearLayout.HORIZONTAL);
+        ar2.addView(achievementTile("👄", "Buen oído", prefs.getInt("sound_attempts", 0) >= 10), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        LinearLayout.LayoutParams gap2 = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f); gap2.leftMargin = dp(8);
+        ar2.addView(achievementTile("🔥", "7 días", prefs.getInt("streak", 0) >= 7), gap2);
+        achievements.addView(ar2, matchWrapMargin(0, 8, 0, 0));
+        body.addView(achievements, matchWrapMargin(0, 0, 0, 12));
 
         LinearLayout notificationCard = cardColumn();
-        notificationCard.setPadding(dp(20), dp(18), dp(20), dp(18));
-        notificationCard.addView(label("🔔 Notificaciones", 21, BLUE_DARK, true));
+        notificationCard.setPadding(dp(18), dp(16), dp(18), dp(16));
+        notificationCard.addView(label("🔔 Recordatorios", 19, BLUE_DARK, true));
         boolean enabled = prefs.getBoolean("notifications_enabled", false);
-        TextView ns = label(enabled ? "Recordatorio diario activado aproximadamente a las 19:00." : "Las notificaciones están desactivadas.", 14, MUTED, false);
-        ns.setPadding(0, dp(6), 0, dp(12));
+        TextView ns = label(enabled ? "Recordatorio diario activo aproximadamente a las 19:00." : "Las notificaciones están desactivadas.", 14, MUTED, false);
+        ns.setPadding(0, dp(5), 0, dp(11));
         notificationCard.addView(ns);
-        TextView notify = actionButton(enabled ? "DESACTIVAR NOTIFICACIONES" : "PERMITIR NOTIFICACIONES", enabled ? Color.WHITE : LIME, enabled ? RED : BLUE_DARK);
+        TextView notify = actionButton(enabled ? "DESACTIVAR" : "ACTIVAR NOTIFICACIONES", enabled ? Color.WHITE : LIME, enabled ? RED : BLUE_DARK);
         if (enabled) notify.setBackground(roundRect(Color.WHITE, 16, RED, 2));
         notify.setOnClickListener(v -> {
             if (prefs.getBoolean("notifications_enabled", false)) {
                 cancelDailyReminder();
                 prefs.edit().putBoolean("notifications_enabled", false).apply();
                 showProfile();
-            } else {
-                requestNotificationPermission(false);
-            }
+            } else requestNotificationPermission(false);
         });
         notificationCard.addView(notify);
         body.addView(notificationCard, matchWrapMargin(0, 0, 0, 12));
 
-        TextView refill = actionButton("RECARGAR CORAZONES", Color.WHITE, BLUE);
+        TextView refill = actionButton("❤️  RECARGAR CORAZONES", Color.WHITE, BLUE);
         refill.setBackground(roundRect(Color.WHITE, 18, BLUE, 2));
         refill.setOnClickListener(v -> {
             prefs.edit().putInt("hearts", 5).apply();
@@ -1318,7 +1665,101 @@ public class MainActivity extends Activity {
         body.addView(refill);
 
         page.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
-        page.addView(bottomNav(4));
+        page.addView(bottomNav(3));
+        root.addView(page);
+    }
+
+    private View profileStat(String emoji, String value, String labelText) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(8), dp(8), dp(8), dp(8));
+        TextView valueView = label(emoji + "  " + value, 20, BLUE_DARK, true);
+        box.addView(valueView);
+        TextView labelView = label(labelText, 12, MUTED, false);
+        labelView.setPadding(dp(28), dp(2), 0, 0);
+        box.addView(labelView);
+        return box;
+    }
+
+    private View achievementTile(String emoji, String title, boolean unlocked) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setGravity(Gravity.CENTER);
+        card.setPadding(dp(9), dp(13), dp(9), dp(13));
+        card.setBackground(roundRect(unlocked ? Color.rgb(238, 252, 238) : Color.rgb(243, 247, 250), 18, unlocked ? GREEN : BORDER, 1));
+        TextView icon = label(emoji, 34, unlocked ? BLUE_DARK : Color.rgb(150, 164, 176), true);
+        icon.setGravity(Gravity.CENTER);
+        card.addView(icon);
+        TextView t = label(title, 13, unlocked ? BLUE_DARK : MUTED, true);
+        t.setGravity(Gravity.CENTER);
+        t.setPadding(0, dp(4), 0, 0);
+        card.addView(t);
+        return card;
+    }
+
+    private GradientDrawable circleDrawable(int fill, int stroke, int strokeDp) {
+        GradientDrawable g = new GradientDrawable();
+        g.setShape(GradientDrawable.OVAL);
+        g.setColor(fill);
+        g.setStroke(dp(strokeDp), stroke);
+        return g;
+    }
+
+    private void chooseAvatar() {
+        try {
+            Intent pick = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            pick.addCategory(Intent.CATEGORY_OPENABLE);
+            pick.setType("image/*");
+            pick.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+            startActivityForResult(pick, REQ_AVATAR);
+        } catch (Throwable t) {
+            Toast.makeText(this, "No pude abrir la galería", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void shareProfile() {
+        try {
+            Intent send = new Intent(Intent.ACTION_SEND);
+            send.setType("text/plain");
+            send.putExtra(Intent.EXTRA_TEXT, "Estoy aprendiendo inglés con Bluelingo. " + prefs.getString("username", "@Usuario") + " · " + prefs.getInt("xp", 0) + " XP · " + completedCount() + " lecciones completadas.");
+            startActivity(Intent.createChooser(send, "Compartir perfil"));
+        } catch (Throwable ignored) {}
+    }
+
+    private void showEditProfile() {
+        setRootWithArt(R.drawable.london_route_art);
+        LinearLayout page = pageColumn();
+        page.addView(nativeBackBar("Editar perfil", () -> showProfile()));
+        ScrollView scroll = new ScrollView(this);
+        LinearLayout body = new LinearLayout(this);
+        body.setOrientation(LinearLayout.VERTICAL);
+        body.setPadding(dp(5), dp(12), dp(5), dp(24));
+        scroll.addView(body);
+
+        LinearLayout card = cardColumn();
+        card.setPadding(dp(20), dp(20), dp(20), dp(20));
+        card.addView(label("Tu nombre de usuario", 18, BLUE_DARK, true));
+        EditText input = new EditText(this);
+        input.setSingleLine(true);
+        input.setText(prefs.getString("username", "@Usuario").replace("@", ""));
+        input.setTextColor(BLUE_DARK);
+        input.setTextSize(18);
+        input.setPadding(dp(14), dp(12), dp(14), dp(12));
+        input.setBackground(roundRect(Color.WHITE, 14, BORDER, 2));
+        card.addView(input, matchWrapMargin(0, 8, 0, 14));
+        TextView save = actionButton("GUARDAR CAMBIOS", LIME, BLUE_DARK);
+        save.setOnClickListener(v -> {
+            String raw = input.getText().toString().trim().replaceAll("[^A-Za-z0-9_]", "");
+            if (raw.length() < 3) {
+                Toast.makeText(this, "Usa al menos 3 caracteres", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            prefs.edit().putString("username", "@" + raw).apply();
+            showProfile();
+        });
+        card.addView(save);
+        body.addView(card);
+        page.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         root.addView(page);
     }
 
@@ -1874,7 +2315,56 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onPause() {
+        if (startupVideoVisible && startupVideo != null) {
+            try {
+                startupVideoPosition = startupVideo.getCurrentPosition();
+                startupVideo.pause();
+            } catch (Throwable ignored) {}
+        } else if (initialSplashFinished) {
+            backgroundStartedAt = System.currentTimeMillis();
+        }
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (startupVideoVisible && startupVideo != null) {
+            try {
+                if (startupVideoPosition > 0) startupVideo.seekTo(startupVideoPosition);
+                startupVideo.start();
+            } catch (Throwable ignored) {}
+            return;
+        }
+        if (initialSplashFinished && backgroundStartedAt > 0L) {
+            long away = System.currentTimeMillis() - backgroundStartedAt;
+            backgroundStartedAt = 0L;
+            if (away >= REENTRY_SPLASH_MS && root != null) {
+                playStartupVideo(null);
+            }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQ_AVATAR && resultCode == RESULT_OK && data != null && data.getData() != null) {
+            Uri uri = data.getData();
+            try {
+                getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            } catch (Throwable ignored) {}
+            prefs.edit().putString("avatar_uri", uri.toString()).apply();
+            showProfile();
+        }
+    }
+
+    @Override
     public void onBackPressed() {
+        if (inSoundQuiz) {
+            showSounds();
+            return;
+        }
         if (currentLesson >= 0) {
             returnAfterLesson();
             return;
@@ -1938,6 +2428,34 @@ public class MainActivity extends Activity {
             this.title = title;
             this.tip = tip;
             this.words = words;
+        }
+    }
+
+    private static class SoundTile {
+        final String symbol;
+        final String example;
+        final String description;
+        final String key;
+
+        SoundTile(String symbol, String example, String description, String key) {
+            this.symbol = symbol;
+            this.example = example;
+            this.description = description;
+            this.key = key;
+        }
+    }
+
+    private static class SoundPair {
+        final String correct;
+        final String distractor;
+        final String soundSymbol;
+        final String skillKey;
+
+        SoundPair(String correct, String distractor, String soundSymbol, String skillKey) {
+            this.correct = correct;
+            this.distractor = distractor;
+            this.soundSymbol = soundSymbol;
+            this.skillKey = skillKey;
         }
     }
 

@@ -1,4 +1,4 @@
-# Bluelingo 8.1.0 — sonidos, perfil y video de inicio
+# Bluelingo 8.1.1 — sonidos, perfil y video de inicio
 
 Evolución sobre la base estable 8.0.0.
 
@@ -19,5 +19,11 @@ Evolución sobre la base estable 8.0.0.
 
 ## Versión
 
-- `versionName = 8.1.0`
+- `versionName = 8.1.1`
 - `versionCode = 41`
+
+
+## Corrección V8.1.1
+- Video de inicio renderizado con TextureView + MediaPlayer para evitar audio con pantalla negra.
+- Video H.264 Baseline para mayor compatibilidad entre dispositivos Android.
+- Prueba automática captura el splash durante la reproducción y rechaza una pantalla prácticamente negra.

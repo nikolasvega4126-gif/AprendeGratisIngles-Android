@@ -11,9 +11,12 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.SurfaceTexture;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
+import android.media.MediaPlayer;
+import android.content.res.AssetFileDescriptor;
 import android.os.Bundle;
 import android.net.Uri;
 import android.speech.RecognitionListener;
@@ -22,6 +25,8 @@ import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.view.Gravity;
+import android.view.Surface;
+import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -33,7 +38,6 @@ import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.VideoView;
 import android.text.InputType;
 
 import java.text.Normalizer;
@@ -76,7 +80,9 @@ public class MainActivity extends Activity {
     private SpeechRecognizer recognizer;
     private boolean initialSplashFinished = false;
     private boolean startupVideoVisible = false;
-    private VideoView startupVideo;
+    private TextureView startupTexture;
+    private MediaPlayer startupPlayer;
+    private boolean startupPlayerPrepared = false;
     private int startupVideoPosition = 0;
     private long backgroundStartedAt = 0L;
     private final Random random = new Random();
@@ -444,40 +450,115 @@ public class MainActivity extends Activity {
     }
 
     private void playStartupVideo(Runnable after) {
-        if (startupVideoVisible) return;
+        if (startupVideoVisible || root == null) return;
         startupVideoVisible = true;
+        startupPlayerPrepared = false;
 
         FrameLayout overlay = new FrameLayout(this);
         overlay.setBackgroundColor(Color.BLACK);
         overlay.setTag("startup_video_overlay");
         root.addView(overlay, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-        startupVideo = new VideoView(this);
-        startupVideo.setBackgroundColor(Color.BLACK);
-        overlay.addView(startupVideo, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.CENTER));
+        // TextureView evita el problema de algunos dispositivos donde VideoView/SurfaceView
+        // reproduce el audio pero deja la superficie de video negra.
+        startupTexture = new TextureView(this);
+        startupTexture.setOpaque(true);
+        overlay.addView(startupTexture, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                Gravity.CENTER));
 
-        Uri uri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.startup);
-        startupVideo.setVideoURI(uri);
-        startupVideo.setOnPreparedListener(mp -> {
-            mp.setLooping(false);
-            mp.setVolume(1f, 1f);
-            try {
-                if (startupVideoPosition > 0) startupVideo.seekTo(startupVideoPosition);
-                startupVideo.start();
-            } catch (Throwable ignored) {}
+        startupTexture.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
+            @Override
+            public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width, int height) {
+                prepareStartupPlayer(surfaceTexture, startupTexture, overlay, after);
+            }
+
+            @Override
+            public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int width, int height) {}
+
+            @Override
+            public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
+                return true;
+            }
+
+            @Override
+            public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {}
         });
-        startupVideo.setOnCompletionListener(mp -> finishStartupVideo(overlay, after));
-        startupVideo.setOnErrorListener((mp, what, extra) -> {
+    }
+
+    private void prepareStartupPlayer(SurfaceTexture surfaceTexture, TextureView texture, FrameLayout overlay, Runnable after) {
+        releaseStartupPlayer();
+        MediaPlayer player = new MediaPlayer();
+        startupPlayer = player;
+        Surface surface = new Surface(surfaceTexture);
+        player.setSurface(surface);
+        surface.release();
+
+        try (AssetFileDescriptor afd = getResources().openRawResourceFd(R.raw.startup)) {
+            if (afd == null) throw new IllegalStateException("No se pudo abrir el video de inicio");
+            player.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+            player.setLooping(false);
+            player.setVolume(1f, 1f);
+            player.setOnVideoSizeChangedListener((mp, videoWidth, videoHeight) ->
+                    resizeStartupTexture(texture, videoWidth, videoHeight));
+            player.setOnPreparedListener(mp -> {
+                if (mp != startupPlayer) return;
+                startupPlayerPrepared = true;
+                try {
+                    if (startupVideoPosition > 0) mp.seekTo(startupVideoPosition);
+                    mp.start();
+                } catch (Throwable ignored) {
+                    finishStartupVideo(overlay, after);
+                }
+            });
+            player.setOnCompletionListener(mp -> finishStartupVideo(overlay, after));
+            player.setOnErrorListener((mp, what, extra) -> {
+                finishStartupVideo(overlay, after);
+                return true;
+            });
+            player.prepareAsync();
+        } catch (Throwable error) {
             finishStartupVideo(overlay, after);
-            return true;
+        }
+    }
+
+    private void resizeStartupTexture(TextureView texture, int videoWidth, int videoHeight) {
+        if (texture == null || videoWidth <= 0 || videoHeight <= 0) return;
+        texture.post(() -> {
+            View parent = (View) texture.getParent();
+            if (parent == null || parent.getWidth() <= 0 || parent.getHeight() <= 0) return;
+            int areaWidth = parent.getWidth();
+            int areaHeight = parent.getHeight();
+            float videoRatio = videoWidth / (float) videoHeight;
+            float areaRatio = areaWidth / (float) areaHeight;
+            int width;
+            int height;
+            if (videoRatio > areaRatio) {
+                height = areaHeight;
+                width = Math.round(height * videoRatio);
+            } else {
+                width = areaWidth;
+                height = Math.round(width / videoRatio);
+            }
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(width, height, Gravity.CENTER);
+            texture.setLayoutParams(lp);
         });
-        startupVideo.start();
+    }
+
+    private void releaseStartupPlayer() {
+        startupPlayerPrepared = false;
+        if (startupPlayer != null) {
+            try { startupPlayer.reset(); } catch (Throwable ignored) {}
+            try { startupPlayer.release(); } catch (Throwable ignored) {}
+            startupPlayer = null;
+        }
     }
 
     private void finishStartupVideo(FrameLayout overlay, Runnable after) {
-        try { if (startupVideo != null) startupVideo.stopPlayback(); } catch (Throwable ignored) {}
-        try { if (overlay.getParent() != null) ((ViewGroup) overlay.getParent()).removeView(overlay); } catch (Throwable ignored) {}
-        startupVideo = null;
+        releaseStartupPlayer();
+        try { if (overlay != null && overlay.getParent() != null) ((ViewGroup) overlay.getParent()).removeView(overlay); } catch (Throwable ignored) {}
+        startupTexture = null;
         startupVideoVisible = false;
         startupVideoPosition = 0;
         if (after != null) after.run();
@@ -2316,10 +2397,10 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onPause() {
-        if (startupVideoVisible && startupVideo != null) {
+        if (startupVideoVisible && startupPlayer != null && startupPlayerPrepared) {
             try {
-                startupVideoPosition = startupVideo.getCurrentPosition();
-                startupVideo.pause();
+                startupVideoPosition = startupPlayer.getCurrentPosition();
+                startupPlayer.pause();
             } catch (Throwable ignored) {}
         } else if (initialSplashFinished) {
             backgroundStartedAt = System.currentTimeMillis();
@@ -2330,11 +2411,13 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (startupVideoVisible && startupVideo != null) {
-            try {
-                if (startupVideoPosition > 0) startupVideo.seekTo(startupVideoPosition);
-                startupVideo.start();
-            } catch (Throwable ignored) {}
+        if (startupVideoVisible && startupPlayer != null) {
+            if (startupPlayerPrepared) {
+                try {
+                    if (startupVideoPosition > 0) startupPlayer.seekTo(startupVideoPosition);
+                    startupPlayer.start();
+                } catch (Throwable ignored) {}
+            }
             return;
         }
         if (initialSplashFinished && backgroundStartedAt > 0L) {
@@ -2344,6 +2427,12 @@ public class MainActivity extends Activity {
                 playStartupVideo(null);
             }
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        releaseStartupPlayer();
+        super.onDestroy();
     }
 
     @Override

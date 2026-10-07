@@ -1,24 +1,25 @@
-# Aprende Gratis Inglés V6.6.1
+# Aprende Gratis Inglés V7.0.0
 
-Cambios solicitados:
+Base: V6.6.1 funcional.
 
-- Fondo del inicio reemplazado por la imagen 1 proporcionada por el usuario.
-- Fondo de ejercicios reemplazado por la imagen 2 proporcionada por el usuario.
-- Se eliminó la terminología Unidad/Unidades de la interfaz principal.
-- La ruta ahora contiene 10 lecciones consecutivas con desbloqueo progresivo:
-  1. Primeros pasos
-  2. Preséntate
-  3. Di de dónde eres
-  4. Números del 1 al 10
-  5. Colores básicos
-  6. Mi familia
-  7. La casa
-  8. Días y meses
-  9. Preguntas básicas
-  10. Repaso y examen
-- Practicar incluye un botón azul VER TODAS LAS LECCIONES.
-- Ese botón abre dentro de la app, mediante WebView:
-  https://www.aprendegratisingles.com/p/lecciones.html
-- Se conserva XP, corazones, racha, audio TTS, micrófono, práctica y progreso.
-- versionName: 6.6.1
-- versionCode: 21
+Novedades V7:
+- Splash en cada apertura con fondo ilustrado y barra de carga.
+- Onboarding solo en el primer inicio:
+  1. @Usuario
+  2. Nivel de inglés
+  3. Objetivo: hablar, viajar, trabajar, estudiar, examen o vivir en otro país
+  4. Meta diaria
+  5. Permiso opcional de notificaciones
+- Notificaciones Android reales:
+  - permiso POST_NOTIFICATIONS en Android 13+
+  - canal de recordatorios
+  - recordatorio diario aproximado a las 19:00
+  - activar/desactivar desde Perfil
+- Perfil ampliado con usuario, nivel, objetivo, meta, XP, liga y lecciones.
+- Nueva pestaña Liga con divisiones Bronce, Plata, Oro, Zafiro y Diamante.
+- Puntuación competitiva local preparada para sincronización.
+- No se inventan rivales online: el ranking entre usuarios reales requiere backend.
+- Se conservan Ruta, 10 lecciones, Practicar, WebView de lecciones, Logros, audio, micrófono, XP, corazones y racha.
+
+VersionCode: 30
+VersionName: 7.0.0

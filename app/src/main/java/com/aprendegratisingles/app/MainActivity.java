@@ -2,6 +2,11 @@ package com.aprendegratisingles.app;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -18,6 +23,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -25,6 +31,7 @@ import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.text.InputType;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -56,6 +63,8 @@ public class MainActivity extends Activity {
     private static final int TYPE_CHOICE = 1;
     private static final int TYPE_LISTEN = 2;
     private static final int TYPE_SPEAK = 3;
+    private static final String NOTIFICATION_CHANNEL = "daily_english";
+    private static final int REQ_NOTIFICATIONS = 702;
 
     private SharedPreferences prefs;
     private FrameLayout root;
@@ -143,6 +152,7 @@ public class MainActivity extends Activity {
     private final String[] lessonIcons = {"👋", "🙋", "🌍", "🔢", "🎨", "👨‍👩‍👧", "🏠", "📅", "❓", "🏆"};
     private WebView lessonsWebView;
     private boolean showingLessonsWeb = false;
+    private boolean notificationPermissionFromOnboarding = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -150,12 +160,174 @@ public class MainActivity extends Activity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         ensureDefaults();
+        createNotificationChannel();
+        if (prefs.getBoolean("notifications_enabled", false)) scheduleDailyReminder();
         initTts();
-        showRoute();
+        showSplash();
     }
 
     private void ensureDefaults() {
-        if (!prefs.contains("hearts")) prefs.edit().putInt("hearts", 5).apply();
+        SharedPreferences.Editor e = prefs.edit();
+        if (!prefs.contains("hearts")) e.putInt("hearts", 5);
+        if (!prefs.contains("daily_minutes")) e.putInt("daily_minutes", 10);
+        e.apply();
+    }
+
+    private void showSplash() {
+        setRootWithArt(R.drawable.london_route_art);
+        View shade = new View(this);
+        shade.setBackgroundColor(Color.argb(80, 0, 73, 150));
+        root.addView(shade, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        LinearLayout box = cardColumn();
+        box.setGravity(Gravity.CENTER);
+        box.setPadding(dp(26), dp(24), dp(26), dp(24));
+        TextView logo = label("🇬🇧", 54, BLUE_DARK, true);
+        logo.setGravity(Gravity.CENTER);
+        box.addView(logo);
+        TextView title = label("Aprende Gratis Inglés", 29, BLUE_DARK, true);
+        title.setGravity(Gravity.CENTER);
+        box.addView(title);
+        TextView sub = label("Tu aventura para hablar inglés empieza aquí", 15, MUTED, false);
+        sub.setGravity(Gravity.CENTER);
+        sub.setPadding(0, dp(8), 0, dp(18));
+        box.addView(sub);
+
+        ProgressBar loading = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        loading.setIndeterminate(false);
+        loading.setMax(100);
+        loading.setProgress(4);
+        loading.getProgressDrawable().setTint(LIME);
+        box.addView(loading, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(18)));
+        TextView loadingText = label("Cargando tu ruta…", 13, BLUE, true);
+        loadingText.setGravity(Gravity.CENTER);
+        loadingText.setPadding(0, dp(10), 0, 0);
+        box.addView(loadingText);
+
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
+        lp.leftMargin = dp(24);
+        lp.rightMargin = dp(24);
+        root.addView(box, lp);
+
+        final int[] progress = {4};
+        Runnable ticker = new Runnable() {
+            @Override public void run() {
+                progress[0] = Math.min(100, progress[0] + 8);
+                loading.setProgress(progress[0]);
+                if (progress[0] < 100) loading.postDelayed(this, 100);
+            }
+        };
+        loading.post(ticker);
+        root.postDelayed(() -> {
+            if (prefs.getBoolean("onboarded_v7", false)) showRoute();
+            else showOnboardingUsername();
+        }, 1600);
+    }
+
+    private LinearLayout onboardingPage(String step, String title, String subtitle) {
+        setRootWithArt(R.drawable.london_route_art);
+        LinearLayout page = new LinearLayout(this);
+        page.setOrientation(LinearLayout.VERTICAL);
+        page.setGravity(Gravity.CENTER);
+        page.setPadding(dp(18), dp(18), dp(18), dp(18));
+        root.addView(page, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        LinearLayout card = cardColumn();
+        card.setPadding(dp(24), dp(22), dp(24), dp(24));
+        card.addView(label(step, 13, BLUE, true));
+        TextView t = label(title, 29, BLUE_DARK, true);
+        t.setPadding(0, dp(5), 0, 0);
+        card.addView(t);
+        TextView st = label(subtitle, 16, MUTED, false);
+        st.setPadding(0, dp(8), 0, dp(18));
+        card.addView(st);
+        page.addView(card, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        return card;
+    }
+
+    private void showOnboardingUsername() {
+        LinearLayout card = onboardingPage("PASO 1 DE 5", "Crea tu nombre de usuario", "Este será tu nombre dentro de la app y en las ligas cuando conectemos el ranking online.");
+        EditText input = new EditText(this);
+        input.setSingleLine(true);
+        input.setTextSize(20);
+        input.setTextColor(BLUE_DARK);
+        input.setHint("@Usuario");
+        input.setHintTextColor(Color.rgb(140, 160, 178));
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        input.setPadding(dp(16), dp(14), dp(16), dp(14));
+        input.setBackground(roundRect(Color.WHITE, 16, BORDER, 2));
+        card.addView(input, matchWrapMargin(0, 0, 0, 14));
+        TextView next = actionButton("CONTINUAR", LIME, BLUE_DARK);
+        next.setOnClickListener(v -> {
+            String raw = input.getText().toString().trim().replaceAll("[^A-Za-z0-9_]", "");
+            if (raw.length() < 3) {
+                Toast.makeText(this, "Escribe un usuario de al menos 3 caracteres", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            prefs.edit().putString("username", "@" + raw).apply();
+            showOnboardingLevel();
+        });
+        card.addView(next);
+    }
+
+    private void showOnboardingLevel() {
+        LinearLayout card = onboardingPage("PASO 2 DE 5", "¿Cuál es tu nivel de inglés?", "Adaptaremos la experiencia inicial a tu nivel actual.");
+        String[] options = {"🌱 Principiante", "📘 Básico", "🚀 Intermedio", "🏅 Avanzado"};
+        for (String option : options) {
+            TextView b = actionButton(option, Color.WHITE, BLUE_DARK);
+            b.setBackground(roundRect(Color.WHITE, 16, BLUE, 2));
+            b.setOnClickListener(v -> {
+                prefs.edit().putString("english_level", option.substring(option.indexOf(' ') + 1)).apply();
+                showOnboardingGoal();
+            });
+            card.addView(b, matchWrapMargin(0, 0, 0, 10));
+        }
+    }
+
+    private void showOnboardingGoal() {
+        LinearLayout card = onboardingPage("PASO 3 DE 5", "¿Para qué quieres aprender inglés?", "Elegiremos ejercicios y misiones que encajen mejor con tu objetivo.");
+        String[] options = {"🗣 Hablar", "✈️ Viajar", "💼 Trabajar", "🎓 Estudiar", "📝 Preparar un examen", "🌍 Vivir en otro país"};
+        for (String option : options) {
+            TextView b = actionButton(option, Color.WHITE, BLUE_DARK);
+            b.setBackground(roundRect(Color.WHITE, 16, BLUE, 2));
+            b.setOnClickListener(v -> {
+                prefs.edit().putString("goal", option.substring(option.indexOf(' ') + 1)).apply();
+                showOnboardingDailyGoal();
+            });
+            card.addView(b, matchWrapMargin(0, 0, 0, 9));
+        }
+    }
+
+    private void showOnboardingDailyGoal() {
+        LinearLayout card = onboardingPage("PASO 4 DE 5", "Elige tu meta diaria", "Una meta pequeña y constante suele ganar a una semana heroica seguida de tres meses de abandono.");
+        int[] minutes = {5, 10, 15, 20};
+        for (int minute : minutes) {
+            TextView b = actionButton(minute + " MINUTOS AL DÍA", minute == 10 ? LIME : Color.WHITE, BLUE_DARK);
+            if (minute != 10) b.setBackground(roundRect(Color.WHITE, 16, BLUE, 2));
+            b.setOnClickListener(v -> {
+                prefs.edit().putInt("daily_minutes", minute).apply();
+                showOnboardingNotifications();
+            });
+            card.addView(b, matchWrapMargin(0, 0, 0, 10));
+        }
+    }
+
+    private void showOnboardingNotifications() {
+        LinearLayout card = onboardingPage("PASO 5 DE 5", "Activa tus recordatorios", "Podemos avisarte una vez al día para que no pierdas tu racha. Tú decides si permites las notificaciones.");
+        card.addView(label("🔔  Recordatorio diario de estudio\n🔥  Aviso para proteger tu racha\n🏆  Futuras alertas de liga y logros", 16, BLUE_DARK, true), matchWrapMargin(0, 0, 0, 18));
+        TextView allow = actionButton("PERMITIR NOTIFICACIONES", LIME, BLUE_DARK);
+        allow.setOnClickListener(v -> requestNotificationPermission(true));
+        card.addView(allow, matchWrapMargin(0, 0, 0, 10));
+        TextView skip = actionButton("AHORA NO", Color.WHITE, BLUE);
+        skip.setBackground(roundRect(Color.WHITE, 16, BLUE, 2));
+        skip.setOnClickListener(v -> finishOnboarding(false));
+        card.addView(skip);
+    }
+
+    private void finishOnboarding(boolean notificationsEnabled) {
+        prefs.edit().putBoolean("onboarded_v7", true).putBoolean("notifications_enabled", notificationsEnabled).apply();
+        if (notificationsEnabled) scheduleDailyReminder();
+        showRoute();
     }
 
     private void initTts() {
@@ -257,7 +429,8 @@ public class MainActivity extends Activity {
         hud.setElevation(dp(4));
 
         int xp = prefs.getInt("xp", 0);
-        TextView level = label("🥉  Nivel " + levelForXp(xp) + " · Bronce\n" + xp + " XP", 15, Color.WHITE, true);
+        String username = prefs.getString("username", "@Usuario");
+        TextView level = label("🥉  Nivel " + levelForXp(xp) + " · Bronce\n" + username + " · " + xp + " XP", 14, Color.WHITE, true);
         hud.addView(level, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         TextView streak = pill("🔥 " + prefs.getInt("streak", 0), Color.argb(225, 31, 88, 157), Color.WHITE);
         hud.addView(streak, wrapMargin(5, 0, 0, 0));
@@ -333,9 +506,9 @@ public class MainActivity extends Activity {
         nav.setBackground(roundRect(Color.argb(248, 255, 255, 255), 22, BORDER, 1));
         nav.setElevation(dp(12));
 
-        String[] icons = {"🗺️", "🧠", "🏆", "👤"};
-        String[] labels = {"Ruta", "Practicar", "Logros", "Perfil"};
-        for (int i = 0; i < 4; i++) {
+        String[] icons = {"🗺️", "🧠", "🥇", "🏆", "👤"};
+        String[] labels = {"Ruta", "Practicar", "Liga", "Logros", "Perfil"};
+        for (int i = 0; i < 5; i++) {
             final int idx = i;
             TextView item = label(icons[i] + "\n" + labels[i], 13, i == selected ? BLUE : BLUE_DARK, true);
             item.setGravity(Gravity.CENTER);
@@ -344,7 +517,8 @@ public class MainActivity extends Activity {
             item.setOnClickListener(v -> {
                 if (idx == 0) showRoute();
                 else if (idx == 1) showPractice();
-                else if (idx == 2) showAchievements();
+                else if (idx == 2) showLeague();
+                else if (idx == 3) showAchievements();
                 else showProfile();
             });
             nav.addView(item, new LinearLayout.LayoutParams(0, dp(58), 1f));
@@ -430,6 +604,79 @@ public class MainActivity extends Activity {
         page.addView(lessonsWebView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
     }
 
+    private void showLeague() {
+        currentLesson = -1;
+        setRootWithArt(R.drawable.london_route_art);
+        LinearLayout page = pageColumn();
+        page.addView(buildHud());
+
+        ScrollView scroll = new ScrollView(this);
+        LinearLayout body = new LinearLayout(this);
+        body.setOrientation(LinearLayout.VERTICAL);
+        body.setPadding(dp(6), dp(12), dp(6), dp(18));
+        scroll.addView(body);
+
+        int xp = prefs.getInt("xp", 0);
+        String league = leagueForXp(xp);
+        int next = nextLeagueXp(xp);
+        LinearLayout hero = cardColumn();
+        hero.setGravity(Gravity.CENTER_HORIZONTAL);
+        hero.setPadding(dp(22), dp(22), dp(22), dp(22));
+        hero.addView(label("🥇", 52, BLUE_DARK, true));
+        TextView title = label("Liga " + league, 29, BLUE_DARK, true);
+        title.setGravity(Gravity.CENTER);
+        hero.addView(title);
+        TextView user = label(prefs.getString("username", "@Usuario") + " · " + xp + " XP", 17, BLUE, true);
+        user.setGravity(Gravity.CENTER);
+        user.setPadding(0, dp(6), 0, dp(10));
+        hero.addView(user);
+        ProgressBar progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        progress.setMax(Math.max(1, next));
+        progress.setProgress(Math.min(xp, next));
+        progress.getProgressDrawable().setTint(LIME);
+        hero.addView(progress, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(18)));
+        TextView toNext = label(next > xp ? (next - xp) + " XP para la siguiente liga" : "Liga máxima alcanzada", 13, MUTED, true);
+        toNext.setGravity(Gravity.CENTER);
+        toNext.setPadding(0, dp(8), 0, 0);
+        hero.addView(toNext);
+        body.addView(hero, matchWrapMargin(0, 0, 0, 12));
+
+        body.addView(statCard("🏅 Puntuación competitiva", competitiveScore() + " puntos"));
+        body.addView(statCard("✅ Lecciones completadas", completedCount() + "/" + lessons.length));
+        body.addView(statCard("🔥 Racha actual", prefs.getInt("streak", 0) + " días"));
+        LinearLayout online = cardColumn();
+        online.setPadding(dp(20), dp(18), dp(20), dp(18));
+        online.addView(label("🌐 Ranking entre usuarios", 21, BLUE_DARK, true));
+        TextView explanation = label("Tu perfil y puntuación ya están preparados. Para comparar posiciones con personas de otros teléfonos necesitamos conectar un backend seguro. No mostramos rivales inventados como si fueran reales.", 15, MUTED, false);
+        explanation.setPadding(0, dp(7), 0, 0);
+        online.addView(explanation);
+        body.addView(online, matchWrapMargin(0, 0, 0, 12));
+
+        page.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        page.addView(bottomNav(2));
+        root.addView(page);
+    }
+
+    private int competitiveScore() {
+        return prefs.getInt("xp", 0) + completedCount() * 100 + prefs.getInt("streak", 0) * 25;
+    }
+
+    private String leagueForXp(int xp) {
+        if (xp < 500) return "Bronce";
+        if (xp < 1200) return "Plata";
+        if (xp < 2500) return "Oro";
+        if (xp < 5000) return "Zafiro";
+        return "Diamante";
+    }
+
+    private int nextLeagueXp(int xp) {
+        if (xp < 500) return 500;
+        if (xp < 1200) return 1200;
+        if (xp < 2500) return 2500;
+        if (xp < 5000) return 5000;
+        return Math.max(5000, xp);
+    }
+
     private void showAchievements() {
         setRootWithArt(R.drawable.london_route_art);
         LinearLayout page = pageColumn();
@@ -444,7 +691,7 @@ public class MainActivity extends Activity {
         body.addView(statCard("⭐ Experiencia", prefs.getInt("xp", 0) + " XP acumulados"));
         body.addView(statCard("🇬🇧 Ruta inicial", completedCount() + "/" + lessons.length + " lecciones completadas"));
         page.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
-        page.addView(bottomNav(2));
+        page.addView(bottomNav(3));
         root.addView(page);
     }
 
@@ -468,17 +715,52 @@ public class MainActivity extends Activity {
         setRootWithArt(R.drawable.london_route_art);
         LinearLayout page = pageColumn();
         page.addView(buildHud());
+        ScrollView scroll = new ScrollView(this);
+        LinearLayout body = new LinearLayout(this);
+        body.setOrientation(LinearLayout.VERTICAL);
+        body.setPadding(dp(4), dp(12), dp(4), dp(18));
+        scroll.addView(body);
+
         LinearLayout profile = cardColumn();
         profile.setGravity(Gravity.CENTER_HORIZONTAL);
-        profile.setPadding(dp(24), dp(28), dp(24), dp(28));
+        profile.setPadding(dp(24), dp(24), dp(24), dp(24));
         profile.addView(label("👤", 52, BLUE_DARK, true));
-        TextView name = label("Estudiante de inglés", 27, BLUE_DARK, true);
+        TextView name = label(prefs.getString("username", "@Usuario"), 27, BLUE_DARK, true);
         name.setGravity(Gravity.CENTER);
         profile.addView(name);
-        TextView stats = label("Nivel " + levelForXp(prefs.getInt("xp", 0)) + "  ·  " + prefs.getInt("xp", 0) + " XP\n" + completedCount() + " lecciones completadas", 17, MUTED, false);
+        String levelName = prefs.getString("english_level", "Principiante");
+        String goal = prefs.getString("goal", "Hablar");
+        int daily = prefs.getInt("daily_minutes", 10);
+        TextView personal = label(levelName + " · Objetivo: " + goal + "\nMeta diaria: " + daily + " min", 15, MUTED, false);
+        personal.setGravity(Gravity.CENTER);
+        personal.setPadding(0, dp(8), 0, dp(12));
+        profile.addView(personal);
+        TextView stats = label("Nivel " + levelForXp(prefs.getInt("xp", 0)) + " · " + prefs.getInt("xp", 0) + " XP\n" + completedCount() + " lecciones · " + leagueForXp(prefs.getInt("xp", 0)), 17, BLUE, true);
         stats.setGravity(Gravity.CENTER);
-        stats.setPadding(0, dp(10), 0, dp(18));
         profile.addView(stats);
+        body.addView(profile, matchWrapMargin(0, 0, 0, 12));
+
+        LinearLayout notificationCard = cardColumn();
+        notificationCard.setPadding(dp(20), dp(18), dp(20), dp(18));
+        notificationCard.addView(label("🔔 Notificaciones", 21, BLUE_DARK, true));
+        boolean enabled = prefs.getBoolean("notifications_enabled", false);
+        TextView ns = label(enabled ? "Recordatorio diario activado aproximadamente a las 19:00." : "Las notificaciones están desactivadas.", 14, MUTED, false);
+        ns.setPadding(0, dp(6), 0, dp(12));
+        notificationCard.addView(ns);
+        TextView notify = actionButton(enabled ? "DESACTIVAR NOTIFICACIONES" : "PERMITIR NOTIFICACIONES", enabled ? Color.WHITE : LIME, enabled ? RED : BLUE_DARK);
+        if (enabled) notify.setBackground(roundRect(Color.WHITE, 16, RED, 2));
+        notify.setOnClickListener(v -> {
+            if (prefs.getBoolean("notifications_enabled", false)) {
+                cancelDailyReminder();
+                prefs.edit().putBoolean("notifications_enabled", false).apply();
+                showProfile();
+            } else {
+                requestNotificationPermission(false);
+            }
+        });
+        notificationCard.addView(notify);
+        body.addView(notificationCard, matchWrapMargin(0, 0, 0, 12));
+
         TextView refill = actionButton("RECARGAR CORAZONES", Color.WHITE, BLUE);
         refill.setBackground(roundRect(Color.WHITE, 18, BLUE, 2));
         refill.setOnClickListener(v -> {
@@ -486,9 +768,10 @@ public class MainActivity extends Activity {
             Toast.makeText(this, "Corazones restaurados", Toast.LENGTH_SHORT).show();
             showProfile();
         });
-        profile.addView(refill);
-        page.addView(profile, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
-        page.addView(bottomNav(3));
+        body.addView(refill);
+
+        page.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        page.addView(bottomNav(4));
         root.addView(page);
     }
 
@@ -792,6 +1075,52 @@ public class MainActivity extends Activity {
         prefs.edit().putString("last_study", today).putInt("streak", next).apply();
     }
 
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL, "Recordatorios de estudio", NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setDescription("Recordatorios para estudiar inglés y mantener tu racha");
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) manager.createNotificationChannel(channel);
+        }
+    }
+
+    private void requestNotificationPermission(boolean fromOnboarding) {
+        notificationPermissionFromOnboarding = fromOnboarding;
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIFICATIONS);
+            return;
+        }
+        prefs.edit().putBoolean("notifications_enabled", true).apply();
+        scheduleDailyReminder();
+        if (fromOnboarding) finishOnboarding(true);
+        else showProfile();
+    }
+
+    private PendingIntent reminderPendingIntent() {
+        Intent intent = new Intent(this, NotificationReceiver.class);
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) flags |= PendingIntent.FLAG_IMMUTABLE;
+        return PendingIntent.getBroadcast(this, 9001, intent, flags);
+    }
+
+    private void scheduleDailyReminder() {
+        AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        if (manager == null) return;
+        Calendar next = Calendar.getInstance();
+        next.set(Calendar.HOUR_OF_DAY, 19);
+        next.set(Calendar.MINUTE, 0);
+        next.set(Calendar.SECOND, 0);
+        next.set(Calendar.MILLISECOND, 0);
+        if (next.getTimeInMillis() <= System.currentTimeMillis()) next.add(Calendar.DAY_OF_YEAR, 1);
+        manager.cancel(reminderPendingIntent());
+        manager.setInexactRepeating(AlarmManager.RTC_WAKEUP, next.getTimeInMillis(), AlarmManager.INTERVAL_DAY, reminderPendingIntent());
+    }
+
+    private void cancelDailyReminder() {
+        AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        if (manager != null) manager.cancel(reminderPendingIntent());
+    }
+
     private void startListening() {
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
             Toast.makeText(this, "El reconocimiento de voz no está disponible", Toast.LENGTH_SHORT).show();
@@ -833,7 +1162,17 @@ public class MainActivity extends Activity {
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 701 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) startListening();
+        if (requestCode == 701 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            startListening();
+            return;
+        }
+        if (requestCode == REQ_NOTIFICATIONS) {
+            boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+            prefs.edit().putBoolean("notifications_enabled", granted).apply();
+            if (granted) scheduleDailyReminder();
+            if (notificationPermissionFromOnboarding) finishOnboarding(granted);
+            else showProfile();
+        }
     }
 
     private boolean similar(String heard, String expected) {

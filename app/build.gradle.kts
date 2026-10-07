@@ -10,8 +10,8 @@ android {
         applicationId = "com.aprendegratisingles.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 20
-        versionName = "6.6.0"
+        versionCode = 21
+        versionName = "6.6.1"
     }
 
     buildTypes {

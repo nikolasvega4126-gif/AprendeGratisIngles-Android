@@ -25,6 +25,9 @@ import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import java.text.Normalizer;
 import java.text.SimpleDateFormat;
@@ -73,37 +76,73 @@ public class MainActivity extends Activity {
     private TextView micButton;
 
     private final Lesson[] lessons = new Lesson[]{
-            new Lesson("Saludos en inglés", "Saludos cotidianos y frases básicas", new Exercise[]{
+            new Lesson("Primeros pasos", "Saludos básicos y frases para comenzar", new Exercise[]{
                     Exercise.wordBank("Traduce esta oración", "Good morning, how are you?", "Buenos días ¿cómo estás?", "Buenos", "días", "¿cómo", "estás?", "noche", "gracias"),
                     Exercise.choice("¿Qué significa “Hello”?", "Hello", "Hola", "Hola", "Gracias", "Adiós", "Por favor"),
                     Exercise.listen("Escucha y elige la traducción", "Good night", "Buenas noches", "Buenas noches", "Buenos días", "Hasta luego", "Gracias"),
-                    Exercise.wordBank("Traduce esta frase", "Nice to meet you", "Mucho gusto", "Mucho", "gusto", "Buenas", "tardes", "por", "favor"),
-                    Exercise.speak("Repite la frase", "Goodbye, see you later", "Adiós, nos vemos luego")
+                    Exercise.speak("Repite la frase", "Nice to meet you", "Mucho gusto")
             }),
-            new Lesson("Di de dónde eres", "Países y presentaciones", new Exercise[]{
+            new Lesson("Preséntate", "Tu nombre y presentaciones sencillas", new Exercise[]{
+                    Exercise.wordBank("Traduce esta oración", "My name is Ana", "Mi nombre es Ana", "Mi", "nombre", "es", "Ana", "Hola", "gracias"),
+                    Exercise.choice("¿Qué significa esta pregunta?", "What is your name?", "¿Cómo te llamas?", "¿Cómo te llamas?", "¿De dónde eres?", "¿Cómo estás?", "¿Qué hora es?"),
+                    Exercise.listen("Escucha y elige", "I am Daniel", "Soy Daniel", "Soy Daniel", "Me llamo Ana", "Estoy bien", "Adiós"),
+                    Exercise.speak("Repite la frase", "My name is Sofia", "Mi nombre es Sofia")
+            }),
+            new Lesson("Di de dónde eres", "Países europeos y la pregunta Where are you from?", new Exercise[]{
                     Exercise.wordBank("Traduce esta oración", "I am from Poland", "Soy de Polonia", "Soy", "de", "Polonia", "Francia", "España"),
                     Exercise.choice("¿Qué significa esta pregunta?", "Where are you from?", "¿De dónde eres?", "¿De dónde eres?", "¿Cómo te llamas?", "¿Dónde trabajas?", "¿Qué hora es?"),
                     Exercise.choice("Elige la traducción correcta", "France", "Francia", "Francia", "Alemania", "Italia", "Inglaterra"),
-                    Exercise.wordBank("Traduce esta oración", "I am from Spain", "Soy de España", "Soy", "de", "España", "Italia", "Alemania"),
                     Exercise.speak("Repite la frase", "I am from Germany", "Soy de Alemania")
             }),
-            new Lesson("Números del 1 al 10", "Reconoce, escucha y usa números básicos", new Exercise[]{
+            new Lesson("Números del 1 al 10", "Reconoce, escucha y pronuncia los números básicos", new Exercise[]{
                     Exercise.choice("¿Qué número es “Seven”?", "Seven", "7", "7", "5", "8", "10"),
                     Exercise.choice("¿Qué número es “Ten”?", "Ten", "10", "10", "2", "6", "9"),
                     Exercise.listen("Escucha y elige el número", "Four", "4", "4", "3", "5", "8"),
-                    Exercise.wordBank("Traduce esta oración", "I have three books", "Tengo tres libros", "Tengo", "tres", "libros", "dos", "casa"),
                     Exercise.speak("Repite los números", "One, two, three, four, five", "Uno, dos, tres, cuatro, cinco")
             }),
-            new Lesson("Examen de unidad", "Mezcla de saludos, países y números", new Exercise[]{
+            new Lesson("Colores básicos", "Los colores más usados en inglés", new Exercise[]{
+                    Exercise.choice("¿Qué significa “Blue”?", "Blue", "Azul", "Azul", "Rojo", "Verde", "Negro"),
+                    Exercise.wordBank("Traduce esta frase", "A red car", "Un carro rojo", "Un", "carro", "rojo", "azul", "casa"),
+                    Exercise.listen("Escucha y elige", "Yellow", "Amarillo", "Amarillo", "Morado", "Blanco", "Marrón"),
+                    Exercise.speak("Repite la frase", "My favorite color is green", "Mi color favorito es verde")
+            }),
+            new Lesson("Mi familia", "Vocabulario para hablar de tu familia", new Exercise[]{
+                    Exercise.choice("¿Qué significa “Mother”?", "Mother", "Madre", "Madre", "Hermana", "Hija", "Tía"),
+                    Exercise.wordBank("Traduce esta oración", "He is my brother", "Él es mi hermano", "Él", "es", "mi", "hermano", "padre", "amigo"),
+                    Exercise.listen("Escucha y elige", "Sister", "Hermana", "Hermana", "Madre", "Hija", "Prima"),
+                    Exercise.speak("Repite la frase", "This is my family", "Esta es mi familia")
+            }),
+            new Lesson("La casa", "Habitaciones y objetos cotidianos", new Exercise[]{
+                    Exercise.choice("¿Qué significa “Kitchen”?", "Kitchen", "Cocina", "Cocina", "Baño", "Dormitorio", "Puerta"),
+                    Exercise.wordBank("Traduce esta oración", "This is my house", "Esta es mi casa", "Esta", "es", "mi", "casa", "mesa", "puerta"),
+                    Exercise.listen("Escucha y elige", "Bathroom", "Baño", "Baño", "Cocina", "Ventana", "Mesa"),
+                    Exercise.speak("Repite la pregunta", "Where is the bathroom?", "¿Dónde está el baño?")
+            }),
+            new Lesson("Días y meses", "Días de la semana y meses básicos", new Exercise[]{
+                    Exercise.choice("¿Qué día viene después de Monday?", "Tuesday", "Tuesday", "Tuesday", "Friday", "Sunday", "Wednesday"),
+                    Exercise.listen("Escucha y elige", "Friday", "Viernes", "Viernes", "Lunes", "Martes", "Domingo"),
+                    Exercise.choice("¿Qué significa “January”?", "January", "Enero", "Enero", "Junio", "Julio", "Marzo"),
+                    Exercise.speak("Repite la pregunta", "What day is it today?", "¿Qué día es hoy?")
+            }),
+            new Lesson("Preguntas básicas", "What, Where, Who, When y How", new Exercise[]{
+                    Exercise.choice("¿Qué palabra significa “Dónde”?", "Where", "Where", "Where", "When", "Who", "What"),
+                    Exercise.wordBank("Ordena la pregunta", "How are you?", "¿Cómo estás?", "¿Cómo", "estás?", "¿Dónde", "eres?", "Hola"),
+                    Exercise.listen("Escucha y elige", "Who is he?", "¿Quién es él?", "¿Quién es él?", "¿Dónde está?", "¿Cómo estás?", "¿Qué es eso?"),
+                    Exercise.speak("Repite la pregunta", "What is your name?", "¿Cómo te llamas?")
+            }),
+            new Lesson("Repaso y examen", "Repasa todo lo aprendido en las primeras lecciones", new Exercise[]{
                     Exercise.choice("¿Qué significa “Good morning”?", "Good morning", "Buenos días", "Buenos días", "Buenas noches", "Gracias", "Adiós"),
                     Exercise.wordBank("Traduce esta oración", "I am from Italy", "Soy de Italia", "Soy", "de", "Italia", "Polonia", "Francia"),
                     Exercise.listen("Escucha y elige", "Nine", "9", "9", "6", "7", "10"),
-                    Exercise.choice("¿Qué significa “Where are you from?”", "Where are you from?", "¿De dónde eres?", "¿De dónde eres?", "¿Cómo estás?", "¿Qué edad tienes?", "¿Dónde está Londres?"),
-                    Exercise.wordBank("Traduce esta frase", "Thank you", "Gracias", "Gracias", "Hola", "días", "favor"),
-                    Exercise.choice("¿Qué número es “Three”?", "Three", "3", "3", "2", "4", "8"),
+                    Exercise.choice("¿Qué significa “Kitchen”?", "Kitchen", "Cocina", "Cocina", "Baño", "Familia", "Azul"),
+                    Exercise.choice("¿Qué significa “Where”?", "Where", "Dónde", "Dónde", "Cuándo", "Quién", "Cómo"),
                     Exercise.speak("Repite la frase", "Nice to meet you", "Mucho gusto")
             })
     };
+
+    private final String[] lessonIcons = {"👋", "🙋", "🌍", "🔢", "🎨", "👨‍👩‍👧", "🏠", "📅", "❓", "🏆"};
+    private WebView lessonsWebView;
+    private boolean showingLessonsWeb = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -166,6 +205,8 @@ public class MainActivity extends Activity {
 
     private void showRoute() {
         currentLesson = -1;
+        showingLessonsWeb = false;
+        lessonsWebView = null;
         setRootWithArt(R.drawable.london_route_art);
 
         LinearLayout page = new LinearLayout(this);
@@ -184,31 +225,25 @@ public class MainActivity extends Activity {
 
         LinearLayout body = new LinearLayout(this);
         body.setOrientation(LinearLayout.VERTICAL);
-        body.setPadding(dp(6), dp(8), dp(6), dp(24));
+        body.setPadding(dp(6), dp(8), dp(6), dp(28));
         scroll.addView(body, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        LinearLayout unitCard = cardColumn();
-        unitCard.setPadding(dp(22), dp(18), dp(22), dp(18));
-        unitCard.addView(label("UNIDAD 1", 14, BLUE, true));
-        TextView title = label("Primeros pasos", 32, BLUE_DARK, true);
-        title.setPadding(0, dp(6), 0, 0);
-        unitCard.addView(title);
-        TextView sub = label("Saludos, presentaciones y números básicos.", 18, MUTED, false);
-        sub.setPadding(0, dp(6), 0, dp(8));
-        unitCard.addView(sub);
-        unitCard.addView(label("🇬🇧  LONDRES · EMPIEZA TU AVENTURA", 15, BLUE_DARK, true));
-        body.addView(unitCard, matchWrapMargin(0, 0, 0, 18));
+        LinearLayout intro = cardColumn();
+        intro.setPadding(dp(22), dp(18), dp(22), dp(18));
+        intro.addView(label("🇬🇧  TU RUTA EN LONDRES", 14, BLUE, true));
+        TextView routeTitle = label("Aprende inglés paso a paso", 29, BLUE_DARK, true);
+        routeTitle.setPadding(0, dp(6), 0, 0);
+        intro.addView(routeTitle);
+        TextView routeSub = label("Completa cada lección para desbloquear la siguiente. Hay 10 lecciones en esta primera ruta.", 17, MUTED, false);
+        routeSub.setPadding(0, dp(6), 0, 0);
+        intro.addView(routeSub);
+        body.addView(intro, matchWrapMargin(0, 0, 0, 18));
 
-        body.addView(lessonRow(0, "👋", "Saludos en inglés", "JUGAR · SIGUIENTE", true));
-        body.addView(connector());
-        boolean l1 = prefs.getBoolean("lesson_0", false);
-        body.addView(lessonRow(1, "🌍", "Di de dónde eres", l1 ? "JUGAR" : "BLOQUEADA", l1));
-        body.addView(connector());
-        boolean l2 = prefs.getBoolean("lesson_1", false);
-        body.addView(lessonRow(2, "🔢", "Números del 1 al 10", l2 ? "JUGAR" : "BLOQUEADA", l2));
-        body.addView(connector());
-        boolean exam = prefs.getBoolean("lesson_0", false) && prefs.getBoolean("lesson_1", false) && prefs.getBoolean("lesson_2", false);
-        body.addView(lessonRow(3, "🏆", "Examen de unidad", exam ? "EMPEZAR EXAMEN" : "BLOQUEADO", exam));
+        for (int i = 0; i < lessons.length; i++) {
+            boolean unlocked = i == 0 || prefs.getBoolean("lesson_" + (i - 1), false);
+            body.addView(lessonRow(i, lessonIcons[i], unlocked));
+            if (i < lessons.length - 1) body.addView(connector());
+        }
 
         page.addView(bottomNav(0));
     }
@@ -235,34 +270,39 @@ public class MainActivity extends Activity {
         return 1 + xp / 150;
     }
 
-    private View lessonRow(int index, String icon, String title, String subtitle, boolean unlocked) {
+    private View lessonRow(int index, String icon, boolean unlocked) {
+        Lesson lesson = lessons[index];
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
 
-        TextView node = label(unlocked ? (index == 3 ? "🎁" : "▶") : "🔒", index == 3 ? 34 : 30, unlocked ? Color.WHITE : Color.rgb(114, 132, 148), true);
+        TextView node = label(unlocked ? (index == lessons.length - 1 ? "🏆" : "▶") : "🔒", index == lessons.length - 1 ? 31 : 28, unlocked ? Color.WHITE : Color.rgb(114, 132, 148), true);
         node.setGravity(Gravity.CENTER);
-        int nodeColor = unlocked ? (index == 3 ? Color.rgb(255, 187, 0) : GREEN) : Color.rgb(218, 227, 236);
+        int nodeColor = unlocked ? (index == lessons.length - 1 ? Color.rgb(255, 187, 0) : GREEN) : Color.rgb(218, 227, 236);
         node.setBackground(roundRect(nodeColor, 100, Color.WHITE, 5));
         node.setElevation(dp(8));
-        LinearLayout.LayoutParams np = new LinearLayout.LayoutParams(dp(index == 3 ? 102 : 86), dp(index == 3 ? 102 : 86));
+        LinearLayout.LayoutParams np = new LinearLayout.LayoutParams(dp(82), dp(82));
         np.rightMargin = dp(12);
         row.addView(node, np);
 
         LinearLayout card = cardColumn();
-        card.setPadding(dp(18), dp(15), dp(18), dp(15));
-        card.addView(label(icon + "  " + title, 21, BLUE_DARK, true));
-        TextView st = label(subtitle, 13, unlocked ? (index == 0 ? Color.rgb(20, 175, 59) : BLUE) : MUTED, true);
-        st.setPadding(0, dp(5), 0, 0);
-        card.addView(st);
+        card.setPadding(dp(18), dp(14), dp(18), dp(14));
+        card.addView(label("LECCIÓN " + (index + 1), 12, BLUE, true));
+        TextView lessonTitle = label(icon + "  " + lesson.title, 20, BLUE_DARK, true);
+        lessonTitle.setPadding(0, dp(3), 0, 0);
+        card.addView(lessonTitle);
+        TextView desc = label(lesson.subtitle, 14, MUTED, false);
+        desc.setPadding(0, dp(5), 0, 0);
+        card.addView(desc);
+        TextView state = label(unlocked ? (prefs.getBoolean("lesson_" + index, false) ? "REPETIR LECCIÓN" : "JUGAR · SIGUIENTE") : "BLOQUEADA", 12, unlocked ? GREEN : MUTED, true);
+        state.setPadding(0, dp(6), 0, 0);
+        card.addView(state);
         card.setAlpha(unlocked ? 1f : 0.94f);
-        LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        row.addView(card, cp);
+        row.addView(card, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         View.OnClickListener click = v -> {
             if (!unlocked) {
-                String msg = index == 3 ? "Completa las 3 lecciones para desbloquear el examen" : "Completa la lección anterior para desbloquear esta";
-                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Completa la lección anterior para desbloquear esta", Toast.LENGTH_SHORT).show();
                 pulse(card);
                 return;
             }
@@ -313,6 +353,8 @@ public class MainActivity extends Activity {
     }
 
     private void showPractice() {
+        currentLesson = -1;
+        showingLessonsWeb = false;
         setRootWithArt(R.drawable.london_route_art);
         LinearLayout page = pageColumn();
         page.addView(buildHud());
@@ -322,18 +364,70 @@ public class MainActivity extends Activity {
         TextView copy = label("Refuerza lo que ya desbloqueaste. La práctica usa ejercicios reales de tus lecciones completadas.", 17, MUTED, false);
         copy.setPadding(0, dp(10), 0, dp(18));
         card.addView(copy);
+
         TextView btn = actionButton("PRACTICAR AHORA", LIME, BLUE_DARK);
         btn.setOnClickListener(v -> startLesson(firstUnlockedPracticeLesson()));
         card.addView(btn);
+
+        TextView all = actionButton("VER TODAS LAS LECCIONES", BLUE, Color.WHITE);
+        all.setBackground(roundRect(BLUE, 18, BLUE_DARK, 1));
+        all.setOnClickListener(v -> showAllLessonsWeb());
+        card.addView(all, matchWrapMargin(0, 12, 0, 0));
+
+        TextView hint = label("Abre aprendegratisingles.com dentro de la app", 13, MUTED, false);
+        hint.setGravity(Gravity.CENTER);
+        hint.setPadding(0, dp(8), 0, 0);
+        card.addView(hint);
+
         page.addView(card, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         page.addView(bottomNav(1));
         root.addView(page);
     }
 
     private int firstUnlockedPracticeLesson() {
-        if (prefs.getBoolean("lesson_2", false)) return 2;
-        if (prefs.getBoolean("lesson_1", false)) return 1;
-        return 0;
+        int lastCompleted = -1;
+        for (int i = 0; i < lessons.length; i++) {
+            if (prefs.getBoolean("lesson_" + i, false)) lastCompleted = i;
+            else break;
+        }
+        return Math.max(0, lastCompleted);
+    }
+
+    private void showAllLessonsWeb() {
+        currentLesson = -1;
+        showingLessonsWeb = true;
+        root = new FrameLayout(this);
+        root.setBackgroundColor(Color.WHITE);
+        setContentView(root);
+
+        LinearLayout page = new LinearLayout(this);
+        page.setOrientation(LinearLayout.VERTICAL);
+        root.addView(page, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        LinearLayout top = new LinearLayout(this);
+        top.setOrientation(LinearLayout.HORIZONTAL);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+        top.setPadding(dp(12), dp(10), dp(12), dp(10));
+        top.setBackgroundColor(BLUE_DARK);
+        TextView back = pill("‹", BLUE, Color.WHITE);
+        back.setTextSize(26);
+        back.setOnClickListener(v -> showPractice());
+        top.addView(back, new LinearLayout.LayoutParams(dp(48), dp(48)));
+        TextView title = label("Todas las lecciones", 20, Color.WHITE, true);
+        LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        tp.leftMargin = dp(12);
+        top.addView(title, tp);
+        page.addView(top);
+
+        lessonsWebView = new WebView(this);
+        WebSettings settings = lessonsWebView.getSettings();
+        settings.setJavaScriptEnabled(true);
+        settings.setDomStorageEnabled(true);
+        settings.setLoadWithOverviewMode(true);
+        settings.setUseWideViewPort(true);
+        lessonsWebView.setWebViewClient(new WebViewClient());
+        lessonsWebView.loadUrl("https://www.aprendegratisingles.com/p/lecciones.html");
+        page.addView(lessonsWebView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
     }
 
     private void showAchievements() {
@@ -345,10 +439,10 @@ public class MainActivity extends Activity {
         body.setOrientation(LinearLayout.VERTICAL);
         body.setPadding(dp(6), dp(12), dp(6), dp(18));
         scroll.addView(body);
-        body.addView(statCard("🏆 Primer paso", prefs.getBoolean("lesson_0", false) ? "COMPLETADO" : "Completa Saludos en inglés"));
+        body.addView(statCard("🏆 Primer paso", prefs.getBoolean("lesson_0", false) ? "COMPLETADO" : "Completa Primeros pasos"));
         body.addView(statCard("🔥 Constancia", prefs.getInt("streak", 0) + " días de racha"));
         body.addView(statCard("⭐ Experiencia", prefs.getInt("xp", 0) + " XP acumulados"));
-        body.addView(statCard("🇬🇧 Unidad 1", completedCount() + "/3 lecciones completadas"));
+        body.addView(statCard("🇬🇧 Ruta inicial", completedCount() + "/" + lessons.length + " lecciones completadas"));
         page.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         page.addView(bottomNav(2));
         root.addView(page);
@@ -366,7 +460,7 @@ public class MainActivity extends Activity {
 
     private int completedCount() {
         int c = 0;
-        for (int i = 0; i < 3; i++) if (prefs.getBoolean("lesson_" + i, false)) c++;
+        for (int i = 0; i < lessons.length; i++) if (prefs.getBoolean("lesson_" + i, false)) c++;
         return c;
     }
 
@@ -454,7 +548,7 @@ public class MainActivity extends Activity {
 
         LinearLayout titleCard = cardColumn();
         titleCard.setPadding(dp(18), dp(14), dp(18), dp(14));
-        titleCard.addView(label(lesson.title, 17, BLUE, true));
+        titleCard.addView(label("Lección " + (currentLesson + 1) + " · " + lesson.title, 17, BLUE, true));
         TextView prompt = label(currentExercise.prompt, 28, BLUE_DARK, true);
         prompt.setPadding(0, dp(5), 0, 0);
         titleCard.addView(prompt);
@@ -643,7 +737,7 @@ public class MainActivity extends Activity {
         boolean wasDone = prefs.getBoolean("lesson_" + currentLesson, false);
         SharedPreferences.Editor e = prefs.edit();
         e.putBoolean("lesson_" + currentLesson, true);
-        if (!wasDone) e.putInt("xp", prefs.getInt("xp", 0) + (currentLesson == 3 ? 100 : 50));
+        if (!wasDone) e.putInt("xp", prefs.getInt("xp", 0) + (currentLesson == lessons.length - 1 ? 100 : 50));
         e.apply();
         updateStreak();
 
@@ -651,11 +745,11 @@ public class MainActivity extends Activity {
         LinearLayout done = cardColumn();
         done.setGravity(Gravity.CENTER);
         done.setPadding(dp(26), dp(30), dp(26), dp(30));
-        done.addView(label(currentLesson == 3 ? "🏆" : "🎉", 64, BLUE_DARK, true));
-        TextView h = label(currentLesson == 3 ? "¡Unidad 1 completada!" : "¡Lección completada!", 30, BLUE_DARK, true);
+        done.addView(label(currentLesson == lessons.length - 1 ? "🏆" : "🎉", 64, BLUE_DARK, true));
+        TextView h = label(currentLesson == lessons.length - 1 ? "¡Ruta inicial completada!" : "¡Lección completada!", 30, BLUE_DARK, true);
         h.setGravity(Gravity.CENTER);
         done.addView(h);
-        TextView xp = label(currentLesson == 3 ? "+100 XP" : "+50 XP", 22, GREEN, true);
+        TextView xp = label(currentLesson == lessons.length - 1 ? "+100 XP" : "+50 XP", 22, GREEN, true);
         xp.setGravity(Gravity.CENTER);
         xp.setPadding(0, dp(8), 0, dp(18));
         done.addView(xp);
@@ -849,6 +943,11 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
+        if (showingLessonsWeb) {
+            if (lessonsWebView != null && lessonsWebView.canGoBack()) lessonsWebView.goBack();
+            else showPractice();
+            return;
+        }
         if (currentLesson >= 0) showRoute();
         else super.onBackPressed();
     }

@@ -2430,12 +2430,6 @@ public class MainActivity extends Activity {
     }
 
     @Override
-    protected void onDestroy() {
-        releaseStartupPlayer();
-        super.onDestroy();
-    }
-
-    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQ_AVATAR && resultCode == RESULT_OK && data != null && data.getData() != null) {
@@ -2463,6 +2457,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        releaseStartupPlayer();
         try {
             if (tts != null) { tts.stop(); tts.shutdown(); }
             if (recognizer != null) recognizer.destroy();

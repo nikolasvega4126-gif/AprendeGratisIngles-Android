@@ -1,0 +1,19 @@
+BLUELINGO 8.1.2 - REVISION DE PRONUNCIACION EN INGLES DE ESTADOS UNIDOS
+
+Version: 8.1.2
+VersionCode: 43
+Acento objetivo: ingles estadounidense (General American)
+TTS: Locale.US
+Reconocimiento de voz: en-US
+
+Revision realizada:
+- 86 entradas de lecciones/estudio revisadas.
+- 32 palabras del modulo de pronunciacion revisadas.
+- Tabla de vocales IPA adaptada a ingles estadounidense.
+- Consonante R representada como /ɹ/.
+- Diptongo GO cambiado a /oʊ/.
+- BED usa /ɛ/.
+- HOT usa /ɑ/.
+- BIRD usa /ɝ/.
+- Se eliminaron marcas y transcripciones britanicas de la interfaz.
+- El audio es la referencia principal; el IPA sirve de apoyo exacto.

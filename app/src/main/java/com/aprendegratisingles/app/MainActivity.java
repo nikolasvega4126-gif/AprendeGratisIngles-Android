@@ -54,15 +54,17 @@ import java.util.Random;
 public class MainActivity extends Activity {
 
     private static final String PREFS = "agi_native_v660";
-    private static final int BLUE = Color.rgb(13, 120, 217);
-    private static final int BLUE_DARK = Color.rgb(6, 64, 140);
-    private static final int LIME = Color.rgb(99, 229, 50);
+    private static final int BLUE = Color.rgb(0, 103, 241);
+    private static final int BLUE_DARK = Color.rgb(6, 27, 113);
+    private static final int LIME = Color.rgb(100, 241, 50);
     private static final int GREEN = Color.rgb(33, 197, 107);
     private static final int RED = Color.rgb(239, 83, 96);
     private static final int CARD = Color.rgb(250, 253, 255);
     private static final int TEXT = Color.rgb(7, 63, 141);
     private static final int MUTED = Color.rgb(86, 106, 129);
-    private static final int BORDER = Color.rgb(203, 224, 244);
+    private static final int BORDER = Color.rgb(130, 207, 255);
+    private static final int NEON = Color.rgb(36, 226, 255);
+    private static final int NIGHT = Color.rgb(3, 14, 78);
 
     private static final int TYPE_WORD_BANK = 0;
     private static final int TYPE_CHOICE = 1;
@@ -89,6 +91,7 @@ public class MainActivity extends Activity {
 
     private int currentLesson = -1;
     private int currentQuestion = 0;
+    private int lessonMistakes = 0;
     private Exercise currentExercise;
     private final ArrayList<String> selectedWords = new ArrayList<>();
     private String selectedChoice = "";
@@ -566,7 +569,7 @@ public class MainActivity extends Activity {
     }
 
     private LinearLayout onboardingPage(String step, int currentStep, int totalSteps, String title, String subtitle) {
-        setRootWithArt(R.drawable.london_route_art);
+        setRootWithArt(R.drawable.game_london_night);
 
         View blueVeil = new View(this);
         blueVeil.setBackgroundColor(Color.argb(54, 0, 66, 145));
@@ -586,7 +589,7 @@ public class MainActivity extends Activity {
         LinearLayout top = new LinearLayout(this);
         top.setOrientation(LinearLayout.VERTICAL);
         top.setPadding(dp(16), dp(12), dp(16), dp(12));
-        top.setBackground(roundRect(Color.argb(235, 7, 63, 141), 22, Color.argb(85, 255, 255, 255), 1));
+        top.setBackground(gameGradient(Color.rgb(3,96,236),Color.rgb(3,33,126),NEON,22));
         top.setElevation(dp(4));
 
         LinearLayout topLine = new LinearLayout(this);
@@ -647,7 +650,7 @@ public class MainActivity extends Activity {
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setPadding(dp(14), dp(12), dp(14), dp(12));
-        row.setBackground(roundRect(Color.WHITE, 20, Color.rgb(205, 224, 242), 2));
+        row.setBackground(gameGradient(Color.WHITE,Color.rgb(231,249,255),Color.rgb(111,223,255),20));
         row.setElevation(dp(3));
 
         TextView iconView = label(icon, 29, BLUE_DARK, true);
@@ -732,7 +735,7 @@ public class MainActivity extends Activity {
     private void showOnboardingGoal() {
         LinearLayout card = onboardingPage("PASO 3 · MISIÓN", 3, 4,
                 "¿Para qué quieres aprender inglés?",
-                "Elige tu misión principal. Bluelingo usará este objetivo para orientar tu progreso.");
+                "Elige tu misión principal. Tu objetivo aparecerá en tu perfil y te ayudará a elegir retos.");
 
         String[][] options = {
                 {"💬", "Hablar mejor", "Ganar confianza en conversaciones"},
@@ -756,7 +759,7 @@ public class MainActivity extends Activity {
     private void showOnboardingDailyGoal() {
         LinearLayout card = onboardingPage("PASO 4 · RETO DIARIO", 4, 4,
                 "¿Cuántos minutos quieres jugar al día?",
-                "Elige un reto que puedas mantener. La constancia gana más XP que estudiar una eternidad un solo domingo.");
+                "Elige un reto que puedas mantener cada día.");
 
         int[] minutes = {5, 10, 15, 20};
         int[] xp = {20, 40, 60, 80};
@@ -764,7 +767,7 @@ public class MainActivity extends Activity {
         String[] names = {"Reto relajado", "Reto normal", "Reto intenso", "Reto experto"};
         for (int i = 0; i < minutes.length; i++) {
             final int minute = minutes[i];
-            String badge = minute == 10 ? "RECOMENDADO" : "+" + xp[i] + " XP";
+            String badge = minute == 10 ? "RECOMENDADO" : minutes[i] + " MIN";
             LinearLayout b = gameChoice(icons[i], minute + " MINUTOS", names[i], badge, minute == 10 ? GREEN : BLUE);
             if (minute == 10) b.setBackground(roundRect(Color.rgb(247, 255, 244), 20, GREEN, 3));
             b.setOnClickListener(v -> {
@@ -777,7 +780,7 @@ public class MainActivity extends Activity {
     }
 
     private void showOnboardingReady() {
-        setRootWithArt(R.drawable.london_route_art);
+        setRootWithArt(R.drawable.game_london_night);
         View blueVeil = new View(this);
         blueVeil.setBackgroundColor(Color.argb(65, 0, 66, 145));
         root.addView(blueVeil, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -934,16 +937,16 @@ public class MainActivity extends Activity {
 
     private void setRootWithArt(int drawable) {
         root = new FrameLayout(this);
-        root.setBackgroundColor(Color.rgb(232, 246, 255));
+        root.setBackgroundColor(NIGHT);
 
         ImageView art = new ImageView(this);
         art.setImageResource(drawable);
-        art.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        art.setAlpha(0.96f);
+        art.setScaleType(ImageView.ScaleType.FIT_XY);
+        art.setAlpha(1.0f);
         root.addView(art, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         View veil = new View(this);
-        veil.setBackgroundColor(Color.argb(16, 255, 255, 255));
+        veil.setBackgroundColor(Color.argb(12, 2, 17, 73));
         root.addView(veil, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         setContentView(root);
     }
@@ -1287,25 +1290,40 @@ public class MainActivity extends Activity {
         LinearLayout nav = new LinearLayout(this);
         nav.setOrientation(LinearLayout.HORIZONTAL);
         nav.setGravity(Gravity.CENTER);
-        nav.setPadding(dp(5), dp(7), dp(5), dp(7));
-        nav.setBackground(roundRect(Color.argb(250, 255, 255, 255), 22, BORDER, 1));
-        nav.setElevation(dp(12));
-
+        nav.setPadding(dp(5), dp(5), dp(5), dp(5));
+        nav.setBackground(gameGradient(Color.rgb(0, 155, 255), Color.rgb(0, 60, 203), NEON, 25));
+        nav.setElevation(dp(13));
         String[] icons = {"🗺️", "🧠", "👄", "👤"};
         String[] labels = {"Aventura", "Practicar", "Sonidos", "Perfil"};
         for (int i = 0; i < 4; i++) {
             final int idx = i;
-            TextView item = label(icons[i] + "\n" + labels[i], 13, i == selected ? BLUE : BLUE_DARK, true);
-            item.setGravity(Gravity.CENTER);
-            item.setPadding(dp(6), dp(5), dp(6), dp(5));
-            if (i == selected) item.setBackground(roundRect(Color.rgb(232, 246, 255), 16, Color.TRANSPARENT, 0));
-            item.setOnClickListener(v -> {
+            LinearLayout tile = new LinearLayout(this);
+            tile.setOrientation(LinearLayout.VERTICAL);
+            tile.setGravity(Gravity.CENTER);
+            tile.setPadding(dp(2), dp(4), dp(2), dp(4));
+            if (selected == i) {
+                tile.setBackground(gameGradient(Color.rgb(5, 233, 255), Color.rgb(0, 132, 253), Color.rgb(139, 255, 255), 21));
+            }
+            TextView pict = label(icons[i], 25, Color.WHITE, true);
+            pict.setGravity(Gravity.CENTER);
+            tile.addView(pict);
+            TextView title = label(labels[i], 12, Color.WHITE, true);
+            title.setGravity(Gravity.CENTER);
+            title.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
+            tile.addView(title);
+            tile.setContentDescription("Ir a " + labels[i]);
+            tile.setClickable(true);
+            tile.setFocusable(true);
+            tile.setOnClickListener(v -> {
+                pulse(tile);
                 if (idx == 0) showRoute();
                 else if (idx == 1) showPractice();
                 else if (idx == 2) showSounds();
                 else showProfile();
             });
-            nav.addView(item, new LinearLayout.LayoutParams(0, dp(60), 1f));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(60), 1f);
+            if (i > 0) lp.leftMargin = dp(3);
+            nav.addView(tile, lp);
         }
         return nav;
     }
@@ -1314,77 +1332,64 @@ public class MainActivity extends Activity {
         currentLesson = -1;
         subtitleText = null;
         subtitleCard = null;
-        setRootWithArt(R.drawable.london_route_art);
-
+        setRootWithArt(R.drawable.game_london_night);
         LinearLayout page = pageColumn();
-        page.addView(buildHud());
-
+        page.addView(gameResourceHud(), matchWrapMargin(0, 0, 0, 7));
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
-        scroll.setClipToPadding(false);
+        scroll.setVerticalScrollBarEnabled(false);
         LinearLayout body = new LinearLayout(this);
         body.setOrientation(LinearLayout.VERTICAL);
-        body.setPadding(dp(2), dp(10), dp(2), dp(28));
-        scroll.addView(body, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
+        body.setPadding(dp(2), dp(15), dp(2), dp(22));
+        scroll.addView(body);
         LinearLayout hero = cardColumn();
-        hero.setPadding(dp(22), dp(18), dp(22), dp(18));
+        hero.setPadding(dp(17), dp(16), dp(17), dp(18));
         hero.addView(label("📚  CENTRO DE PRÁCTICA", 13, BLUE, true));
-        TextView title = label("Aprende, escucha y repite", 28, BLUE_DARK, true);
-        title.setPadding(0, dp(4), 0, 0);
-        hero.addView(title);
-        TextView copy = label("Todo el contenido está integrado en Bluelingo. No necesitas abrir la web para estudiar pronunciación, vocabulario o lecciones.", 16, MUTED, false);
-        copy.setPadding(0, dp(7), 0, dp(14));
-        hero.addView(copy);
-
-        TextView continueBtn = actionButton("▶  CONTINUAR PRÁCTICA", LIME, BLUE_DARK);
-        continueBtn.setOnClickListener(v -> startLessonFromPractice(firstUnlockedPracticeLesson()));
-        hero.addView(continueBtn);
+        LinearLayout titleRow = new LinearLayout(this);
+        titleRow.setGravity(Gravity.CENTER_VERTICAL);
+        titleRow.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout words = new LinearLayout(this);
+        words.setOrientation(LinearLayout.VERTICAL);
+        words.addView(label("Aprende, escucha\ny repite", 26, BLUE_DARK, true));
+        TextView copy = label("Lecciones, sonidos y vocabulario. Todo dentro del juego.", 14, MUTED, false);
+        copy.setPadding(0, dp(8), 0, 0);
+        words.addView(copy);
+        titleRow.addView(words, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        titleRow.addView(gameHeroCharacters(), new LinearLayout.LayoutParams(dp(123), dp(138)));
+        hero.addView(titleRow, matchWrapMargin(0, 10, 0, 12));
+        TextView start = actionButton("▶  CONTINUAR PRÁCTICA", LIME, BLUE_DARK);
+        start.setOnClickListener(v -> startLessonFromPractice(firstUnlockedPracticeLesson()));
+        hero.addView(start);
         body.addView(hero, matchWrapMargin(0, 0, 0, 12));
 
         LinearLayout selector = new LinearLayout(this);
         selector.setOrientation(LinearLayout.HORIZONTAL);
-        selector.setPadding(dp(5), dp(5), dp(5), dp(5));
-        selector.setBackground(roundRect(Color.argb(245, 255, 255, 255), 20, BORDER, 1));
-
-        TextView lessonsTab = label("📘  LECCIONES", 14, practiceSection == 0 ? Color.WHITE : BLUE_DARK, true);
-        lessonsTab.setGravity(Gravity.CENTER);
-        lessonsTab.setPadding(dp(8), dp(12), dp(8), dp(12));
-        lessonsTab.setBackground(roundRect(practiceSection == 0 ? BLUE : Color.TRANSPARENT, 16, Color.TRANSPARENT, 0));
-        lessonsTab.setOnClickListener(v -> {
-            practiceSection = 0;
-            showPractice();
-        });
-        selector.addView(lessonsTab, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-
-        TextView pronunciationTab = label("🗣️  PRONUNCIACIÓN", 14, practiceSection == 1 ? Color.WHITE : BLUE_DARK, true);
-        pronunciationTab.setGravity(Gravity.CENTER);
-        pronunciationTab.setPadding(dp(8), dp(12), dp(8), dp(12));
-        pronunciationTab.setBackground(roundRect(practiceSection == 1 ? GREEN : Color.TRANSPARENT, 16, Color.TRANSPARENT, 0));
-        pronunciationTab.setOnClickListener(v -> {
-            practiceSection = 1;
-            showPractice();
-        });
-        selector.addView(pronunciationTab, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        body.addView(selector, matchWrapMargin(0, 0, 0, 14));
-
-        if (practiceSection == 0) {
-            body.addView(label("Todas las lecciones", 24, BLUE_DARK, true), matchWrapMargin(4, 0, 0, 4));
-            TextView hint = label("Abre una lección para estudiar el vocabulario, escuchar cada palabra y luego practicarla con ejercicios.", 15, MUTED, false);
-            body.addView(hint, matchWrapMargin(4, 0, 4, 12));
-            for (int i = 0; i < studyLessons.length; i++) {
-                body.addView(studyLessonCard(i), matchWrapMargin(0, 0, 0, 12));
-            }
+        selector.setPadding(dp(4),dp(4),dp(4),dp(4));
+        selector.setBackground(gameGradient(Color.WHITE,Color.rgb(229,245,255),NEON,24));
+        TextView a = label("📘  LECCIONES", 14, practiceSection==0?Color.WHITE:BLUE_DARK,true);
+        a.setGravity(Gravity.CENTER); a.setPadding(dp(7),dp(15),dp(7),dp(15));
+        if(practiceSection==0) a.setBackground(gameGradient(Color.rgb(0,191,255),Color.rgb(1,78,223),NEON,20));
+        a.setOnClickListener(v->{practiceSection=0;showPractice();});
+        selector.addView(a,new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f));
+        TextView b = label("🎤  PRONUNCIACIÓN", 13, practiceSection==1?Color.WHITE:BLUE_DARK,true);
+        b.setGravity(Gravity.CENTER); b.setPadding(dp(7),dp(15),dp(7),dp(15));
+        if(practiceSection==1) b.setBackground(gameGradient(Color.rgb(0,191,255),Color.rgb(1,78,223),NEON,20));
+        b.setOnClickListener(v->{practiceSection=1;showPractice();});
+        selector.addView(b,new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f));
+        body.addView(selector, matchWrapMargin(0,0,0,12));
+        LinearLayout section = cardColumn();
+        section.setPadding(dp(15),dp(15),dp(15),dp(15));
+        if(practiceSection==0) {
+            section.addView(label("📘  Todas las lecciones", 23, BLUE_DARK, true));
+            section.addView(label("Estudia palabras y frases. Toca una misión para comenzar.", 14, MUTED, false),matchWrapMargin(0,5,0,12));
+            for(int i=0;i<studyLessons.length;i++) section.addView(studyLessonCard(i), matchWrapMargin(0,0,0,11));
         } else {
-            body.addView(label("Pronunciación paso a paso", 24, BLUE_DARK, true), matchWrapMargin(4, 0, 0, 4));
-            TextView hint = label("Escucha a velocidad normal, lenta o repite tres veces. Todo el audio usa el motor de voz nativo de Android.", 15, MUTED, false);
-            body.addView(hint, matchWrapMargin(4, 0, 4, 12));
-            for (int i = 0; i < pronunciationLessons.length; i++) {
-                body.addView(pronunciationLessonCard(i), matchWrapMargin(0, 0, 0, 12));
-            }
+            section.addView(label("🎧  Pronunciación paso a paso", 22, BLUE_DARK, true));
+            section.addView(label("Escucha a velocidad normal o lenta y practica con tu voz.", 14, MUTED, false),matchWrapMargin(0,5,0,12));
+            for(int i=0;i<pronunciationLessons.length;i++) section.addView(pronunciationLessonCard(i),matchWrapMargin(0,0,0,11));
         }
-
-        page.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        body.addView(section);
+        page.addView(scroll,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,0,1f));
         page.addView(bottomNav(1));
         root.addView(page);
     }
@@ -1400,46 +1405,29 @@ public class MainActivity extends Activity {
 
     private View studyLessonCard(int index) {
         StudyLesson lesson = studyLessons[index];
-        LinearLayout card = cardColumn();
-        card.setPadding(dp(20), dp(17), dp(20), dp(17));
-
-        TextView badge = pill("MISIÓN " + (index + 1), Color.rgb(232, 246, 255), BLUE_DARK);
-        badge.setGravity(Gravity.CENTER);
-        card.addView(badge, wrapMargin(0, 0, 0, 10));
-
-        TextView icon = label(index < 2 ? "🗣️" : "📘", 36, BLUE, true);
-        icon.setPadding(0, 0, 0, dp(5));
-        card.addView(icon);
-
-        TextView title = label(lesson.title, 23, BLUE_DARK, true);
-        title.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
-        card.addView(title);
-
-        TextView subtitle = label(lesson.subtitle, 15, MUTED, false);
-        subtitle.setPadding(0, dp(5), 0, dp(12));
-        card.addView(subtitle);
-
-        LinearLayout preview = new LinearLayout(this);
-        preview.setOrientation(LinearLayout.VERTICAL);
-        preview.setPadding(dp(14), dp(10), dp(14), dp(10));
-        preview.setBackground(roundRect(Color.rgb(244, 249, 253), 16, BORDER, 1));
-        int previewCount = Math.min(3, lesson.items.length);
-        for (int i = 0; i < previewCount; i++) {
-            StudyItem item = lesson.items[i];
-            TextView row = label("•  " + item.english + "  =  " + item.spanish, 15, i == 0 ? BLUE_DARK : MUTED, i == 0);
-            row.setPadding(0, dp(3), 0, dp(3));
-            preview.addView(row);
-        }
-        card.addView(preview);
-
-        TextView open = label("Abrir lección  →", 17, GREEN, true);
-        open.setPadding(0, dp(13), 0, 0);
-        card.addView(open);
-
-        card.setOnClickListener(v -> {
-            pulse(card);
-            showStudyLesson(index);
-        });
+        LinearLayout card = new LinearLayout(this);
+        card.setGravity(Gravity.CENTER_VERTICAL);
+        card.setOrientation(LinearLayout.HORIZONTAL);
+        card.setPadding(dp(12),dp(13),dp(12),dp(13));
+        card.setBackground(gameGradient(Color.rgb(235,249,255),Color.WHITE,Color.rgb(65,190,255),18));
+        card.setElevation(dp(3));
+        TextView icon = label(index==0?"⏰":index==1?"💬":index==2?"🌍":index==3?"👨‍👩‍👧":"📘",31,BLUE_DARK,true);
+        icon.setGravity(Gravity.CENTER);
+        icon.setBackground(roundRect(Color.rgb(220,243,255),18,Color.rgb(117,215,255),2));
+        card.addView(icon,new LinearLayout.LayoutParams(dp(68),dp(68)));
+        LinearLayout details = new LinearLayout(this);
+        details.setOrientation(LinearLayout.VERTICAL);
+        details.setPadding(dp(11),0,dp(4),0);
+        details.addView(label("MISIÓN " + (index+1),12,BLUE,true));
+        details.addView(label(lesson.title,18,BLUE_DARK,true));
+        TextView copy = label(lesson.subtitle,12,MUTED,false);
+        copy.setMaxLines(2);
+        details.addView(copy);
+        card.addView(details,new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f));
+        TextView arrow = label("›",32,BLUE,true);
+        card.addView(arrow);
+        card.setClickable(true);card.setFocusable(true);
+        card.setOnClickListener(v->{pulse(card);showStudyLesson(index);});
         return card;
     }
 
@@ -1449,9 +1437,10 @@ public class MainActivity extends Activity {
         currentLesson = -1;
         subtitleText = null;
         subtitleCard = null;
-        setRootWithArt(R.drawable.london_route_art);
+        setRootWithArt(R.drawable.game_london_night);
 
         LinearLayout page = pageColumn();
+        page.addView(gameResourceHud(),matchWrapMargin(0,0,0,7));
         page.addView(nativeBackBar("Lección " + (index + 1), () -> showPractice()));
 
         ScrollView scroll = new ScrollView(this);
@@ -1484,7 +1473,7 @@ public class MainActivity extends Activity {
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setPadding(dp(14), dp(12), dp(14), dp(12));
-        header.setBackground(roundRect(Color.rgb(7, 35, 61), 14, Color.TRANSPARENT, 0));
+        header.setBackground(gameGradient(Color.rgb(2,45,131),Color.rgb(5,19,72),NEON,14));
         TextView h1 = label("INGLÉS", 13, Color.WHITE, true);
         TextView h2 = label("CÓMO SUENA", 12, Color.WHITE, true);
         TextView h3 = label("ESPAÑOL", 13, Color.WHITE, true);
@@ -1588,9 +1577,10 @@ public class MainActivity extends Activity {
         currentLesson = -1;
         subtitleText = null;
         subtitleCard = null;
-        setRootWithArt(R.drawable.london_route_art);
+        setRootWithArt(R.drawable.game_london_night);
 
         LinearLayout page = pageColumn();
+        page.addView(gameResourceHud(),matchWrapMargin(0,0,0,7));
         page.addView(nativeBackBar("Pronunciación", () -> showPractice()));
 
         ScrollView scroll = new ScrollView(this);
@@ -1726,57 +1716,71 @@ public class MainActivity extends Activity {
     }
 
     private void showSounds() {
-        inSoundQuiz = false;
-        currentLesson = -1;
-        subtitleText = null;
-        subtitleCard = null;
-        setRootWithArt(R.drawable.london_route_art);
-
-        LinearLayout page = pageColumn();
-        page.addView(buildHud());
-
-        ScrollView scroll = new ScrollView(this);
+        inSoundQuiz=false;
+        currentLesson=-1;
+        subtitleText=null;subtitleCard=null;
+        setRootWithArt(R.drawable.game_london_night);
+        LinearLayout page=pageColumn();
+        page.addView(gameResourceHud(),matchWrapMargin(0,0,0,7));
+        ScrollView scroll=new ScrollView(this);
         scroll.setFillViewport(true);
-        scroll.setClipToPadding(false);
-        LinearLayout body = new LinearLayout(this);
+        scroll.setVerticalScrollBarEnabled(false);
+        LinearLayout body=new LinearLayout(this);
         body.setOrientation(LinearLayout.VERTICAL);
-        body.setPadding(dp(2), dp(10), dp(2), dp(28));
-        scroll.addView(body, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-        LinearLayout hero = cardColumn();
-        hero.setPadding(dp(22), dp(20), dp(22), dp(20));
-        hero.addView(label("👄  ENTRENADOR DE SONIDOS", 13, BLUE, true));
-        TextView title = label("¡Mejora tu pronunciación del inglés!", 28, BLUE_DARK, true);
-        title.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
-        title.setPadding(0, dp(5), 0, 0);
-        hero.addView(title);
-        TextView copy = label("Entrena tu oído con palabras reales. Aquí no usamos símbolos fonéticos difíciles: escuchas, comparas y repites.", 16, MUTED, false);
-        copy.setPadding(0, dp(8), 0, dp(16));
-        hero.addView(copy);
-        TextView start = actionButton("▶  EMPEZAR LECCIÓN", Color.rgb(72, 184, 238), Color.WHITE);
-        start.setOnClickListener(v -> startSoundQuiz());
+        body.setPadding(dp(2),dp(15),dp(2),dp(24));
+        scroll.addView(body);
+        LinearLayout hero=cardColumn();
+        hero.setPadding(dp(17),dp(16),dp(17),dp(18));
+        hero.addView(label("👄  ENTRENADOR DE SONIDOS",13,BLUE,true));
+        LinearLayout heroRow=new LinearLayout(this);
+        heroRow.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout text=new LinearLayout(this);
+        text.setOrientation(LinearLayout.VERTICAL);
+        text.addView(label("¡Mejora tu pronunciación del inglés!",24,BLUE_DARK,true));
+        TextView sub=label("Escucha, compara y repite. Sin símbolos difíciles.",14,MUTED,false);
+        sub.setPadding(0,dp(8),0,0);text.addView(sub);
+        heroRow.addView(text,new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f));
+        heroRow.addView(gameHeroCharacters(),new LinearLayout.LayoutParams(dp(123),dp(138)));
+        hero.addView(heroRow,matchWrapMargin(0,10,0,10));
+        TextView start=actionButton("▶  EMPEZAR LECCIÓN",BLUE,Color.WHITE);
+        start.setOnClickListener(v->startSoundQuiz());
         hero.addView(start);
-        body.addView(hero, matchWrapMargin(0, 0, 0, 14));
-
-        LinearLayout progressCard = cardColumn();
-        progressCard.setPadding(dp(18), dp(15), dp(18), dp(15));
-        int attempts = prefs.getInt("sound_attempts", 0);
-        int best = prefs.getInt("sound_best", 0);
-        progressCard.addView(label("🎧 Tu progreso de pronunciación", 19, BLUE_DARK, true));
-        TextView stats = label(attempts + " ejercicios completados · Mejor sesión: " + best + "/10", 14, MUTED, false);
-        stats.setPadding(0, dp(5), 0, 0);
-        progressCard.addView(stats);
-        body.addView(progressCard, matchWrapMargin(0, 0, 0, 16));
-
-        body.addView(label("Vocales", 25, BLUE_DARK, true), matchWrapMargin(4, 0, 0, 10));
-        addSoundGrid(body, vowelSounds);
-
-        body.addView(label("Consonantes", 25, BLUE_DARK, true), matchWrapMargin(4, 22, 0, 10));
-        addSoundGrid(body, consonantSounds);
-
-        page.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        body.addView(hero,matchWrapMargin(0,0,0,12));
+        LinearLayout progress=cardColumn();
+        progress.setPadding(dp(15),dp(14),dp(15),dp(14));
+        progress.addView(label("🎧  Tu progreso de pronunciación",18,BLUE_DARK,true));
+        progress.addView(label(prefs.getInt("sound_attempts",0)+" ejercicios completados · Mejor sesión: "+prefs.getInt("sound_best",0)+"/10",13,MUTED,false),matchWrapMargin(0,5,0,0));
+        body.addView(progress,matchWrapMargin(0,0,0,14));
+        body.addView(gameSectionTitle("Vocales"),matchWrapMargin(3,0,0,10));
+        addSoundGrid(body,vowelSounds);
+        body.addView(gameSectionTitle("Consonantes"),matchWrapMargin(3,17,0,10));
+        addSoundGrid(body,consonantSounds);
+        page.addView(scroll,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,0,1f));
         page.addView(bottomNav(2));
         root.addView(page);
+    }
+
+    /** Decorative guide made from the user's own visual references, not a clickable screenshot. */
+    private FrameLayout gameHeroCharacters() {
+        FrameLayout group = new FrameLayout(this);
+        ImageView guide = new ImageView(this);
+        guide.setImageResource(R.drawable.game_guide_girl);
+        guide.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        guide.setContentDescription("Guía de Bluelingo con sudadera azul");
+        FrameLayout.LayoutParams glp = new FrameLayout.LayoutParams(dp(121), dp(121), Gravity.RIGHT | Gravity.BOTTOM);
+        group.addView(guide, glp);
+        ImageView mascot = new ImageView(this);
+        mascot.setImageResource(R.drawable.app_icon_512);
+        mascot.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        FrameLayout.LayoutParams mlp = new FrameLayout.LayoutParams(dp(53), dp(53), Gravity.RIGHT | Gravity.TOP);
+        group.addView(mascot, mlp);
+        return group;
+    }
+
+    private TextView gameSectionTitle(String title) {
+        TextView view=label("▥  "+title,24,Color.WHITE,true);
+        view.setShadowLayer(dp(3),0,dp(2),NIGHT);
+        return view;
     }
 
     private void addSoundGrid(LinearLayout body, SoundTile[] sounds) {
@@ -1785,7 +1789,7 @@ public class MainActivity extends Activity {
             row.setOrientation(LinearLayout.HORIZONTAL);
             for (int j = 0; j < 3; j++) {
                 int pos = i + j;
-                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(126), 1f);
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(142), 1f);
                 if (j > 0) lp.leftMargin = dp(7);
                 if (pos < sounds.length) row.addView(soundTileView(sounds[pos]), lp);
                 else {
@@ -1801,29 +1805,46 @@ public class MainActivity extends Activity {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setGravity(Gravity.CENTER_HORIZONTAL);
-        card.setPadding(dp(8), dp(12), dp(8), dp(9));
-        card.setBackground(roundRect(Color.argb(248, 255, 255, 255), 20, Color.rgb(169, 211, 236), 2));
-        card.setElevation(dp(3));
-
-        TextView soundName = label(sound.symbol, 18, BLUE_DARK, true);
-        soundName.setGravity(Gravity.CENTER);
-        card.addView(soundName);
-        TextView example = label(sound.example, 13, MUTED, false);
-        example.setGravity(Gravity.CENTER);
-        example.setPadding(0, dp(2), 0, dp(7));
-        card.addView(example);
-
-        ProgressBar p = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
-        p.setMax(5);
-        p.setProgress(Math.min(5, prefs.getInt("sound_skill_" + sound.key, 0)));
-        p.getProgressDrawable().setTint(GREEN);
-        card.addView(p, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(9)));
-        card.setOnClickListener(v -> {
+        card.setPadding(dp(5),dp(8),dp(5),dp(9));
+        card.setBackground(gameGradient(Color.WHITE,Color.rgb(240,250,255),Color.rgb(85,215,255),18));
+        card.setElevation(dp(4));
+        int art = 0;
+        String name = sound.symbol;
+        switch (sound.key) {
+            case "ae": art=R.drawable.sound_cat; name="A abierta"; break;
+            case "uh": art=R.drawable.sound_cup; name="A central"; break;
+            case "i_short": art=R.drawable.sound_sit; name="I corta"; break;
+            case "i_long": art=R.drawable.sound_see; name="I larga"; break;
+            case "e_short": art=R.drawable.sound_bed; name="E abierta"; break;
+            case "a_long": art=R.drawable.sound_car; name="AR inglesa"; break;
+        }
+        if (art != 0) {
+            ImageView picture = new ImageView(this);
+            picture.setImageResource(art);
+            picture.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            picture.setContentDescription("Ilustración de " + sound.example);
+            card.addView(picture,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,dp(72)));
+        } else {
+            TextView symbol=label(name,23,BLUE,true);
+            symbol.setGravity(Gravity.CENTER);
+            card.addView(symbol,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,dp(72)));
+        }
+        String soundTitle = sound.symbol.contains(" de ") ? sound.symbol : name + " de " + sound.example.toUpperCase(Locale.US);
+        TextView ex=label(soundTitle,12,BLUE_DARK,true);
+        ex.setGravity(Gravity.CENTER);
+        ex.setMaxLines(2);
+        card.addView(ex,matchWrapMargin(0,0,0,6));
+        ProgressBar progress=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);
+        progress.setMax(5);
+        progress.setProgress(Math.min(5,prefs.getInt("sound_skill_"+sound.key,0)));
+        progress.getProgressDrawable().setTint(GREEN);
+        card.addView(progress,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,dp(7)));
+        card.setClickable(true);card.setFocusable(true);
+        card.setContentDescription(name+" de "+sound.example+". Toca para escuchar.");
+        card.setOnClickListener(v->{
             pulse(card);
-            speakAtRate(sound.example, 0.82f, 1);
-            int skill = Math.min(5, prefs.getInt("sound_skill_" + sound.key, 0) + 1);
-            prefs.edit().putInt("sound_skill_" + sound.key, skill).apply();
-            p.setProgress(skill);
+            speakAtRate(sound.example,0.88f,1);
+            // Exploring a tile does not count as demonstrated mastery.
         });
         return card;
     }
@@ -1846,15 +1867,20 @@ public class MainActivity extends Activity {
         }
         currentSoundPair = soundQuizQueue.get(soundQuizQuestion);
         selectedSoundAnswer = "";
-        setRootWithArt(R.drawable.london_exercise_art);
+        setRootWithArt(R.drawable.game_london_night_2);
 
         LinearLayout page = pageColumn();
+        page.addView(gameResourceHud(),matchWrapMargin(0,0,0,7));
         page.addView(nativeBackBar("Entrenamiento de sonidos", () -> showSounds()));
 
+        ScrollView quizScroll = new ScrollView(this);
+        quizScroll.setFillViewport(false);
+        quizScroll.setVerticalScrollBarEnabled(false);
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
         content.setPadding(dp(8), dp(12), dp(8), dp(14));
-        page.addView(content, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        quizScroll.addView(content, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        page.addView(quizScroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
         ProgressBar progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         progress.setMax(soundQuizQueue.size());
@@ -1873,7 +1899,7 @@ public class MainActivity extends Activity {
         TextView speaker = label("🔊", 54, BLUE_DARK, true);
         speaker.setGravity(Gravity.CENTER);
         speaker.setContentDescription("Repetir audio");
-        speaker.setBackground(roundRect(Color.rgb(72, 184, 238), 28, Color.rgb(34, 145, 211), 2));
+        speaker.setBackground(gameGradient(Color.rgb(54, 224, 255), Color.rgb(2, 112, 242), NEON, 28));
         speaker.setElevation(dp(7));
         speaker.setOnClickListener(v -> speakAtRate(currentSoundPair.correct, 0.82f, 1));
         LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(dp(148), dp(148));
@@ -1906,7 +1932,8 @@ public class MainActivity extends Activity {
 
         soundCheckButton = actionButton("COMPROBAR", LIME, BLUE_DARK);
         soundCheckButton.setOnClickListener(v -> checkSoundAnswer());
-        page.addView(soundCheckButton, matchWrapMargin(8, 0, 8, 12));
+        page.addView(soundCheckButton, matchWrapMargin(8, 0, 8, 9));
+        page.addView(bottomNav(2));
         root.addView(page);
 
         root.postDelayed(() -> {
@@ -1918,7 +1945,7 @@ public class MainActivity extends Activity {
         TextView choice = label(word, 25, BLUE_DARK, true);
         choice.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
         choice.setGravity(Gravity.CENTER);
-        choice.setBackground(roundRect(Color.argb(249, 255, 255, 255), 22, BORDER, 2));
+        choice.setBackground(gameGradient(Color.WHITE,Color.rgb(242,250,255),Color.rgb(126,220,255),22));
         choice.setElevation(dp(4));
         return choice;
     }
@@ -1926,7 +1953,7 @@ public class MainActivity extends Activity {
     private void chooseSoundAnswer(TextView selected, TextView other) {
         selectedSoundAnswer = selected.getText().toString();
         selected.setTextColor(BLUE_DARK);
-        selected.setBackground(roundRect(Color.rgb(224, 245, 255), 22, Color.rgb(72, 184, 238), 3));
+        selected.setBackground(gameGradient(Color.rgb(232,251,255),Color.rgb(185,239,255),NEON,22));
         other.setTextColor(BLUE_DARK);
         other.setBackground(roundRect(Color.argb(249, 255, 255, 255), 22, BORDER, 2));
     }
@@ -1967,7 +1994,7 @@ public class MainActivity extends Activity {
         inSoundQuiz = true;
         int previousBest = prefs.getInt("sound_best", 0);
         if (soundQuizCorrect > previousBest) prefs.edit().putInt("sound_best", soundQuizCorrect).apply();
-        setRootWithArt(R.drawable.london_route_art);
+        setRootWithArt(R.drawable.game_london_night);
         LinearLayout page = pageColumn();
         LinearLayout body = new LinearLayout(this);
         body.setOrientation(LinearLayout.VERTICAL);
@@ -2008,8 +2035,9 @@ public class MainActivity extends Activity {
 
     private void showProfile() {
         currentLesson = -1;
-        setRootWithArt(R.drawable.london_route_art);
+        setRootWithArt(R.drawable.game_london_night);
         LinearLayout page = pageColumn();
+        page.addView(gameResourceHud(),matchWrapMargin(0,0,0,7));
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
         LinearLayout body = new LinearLayout(this);
@@ -2019,6 +2047,7 @@ public class MainActivity extends Activity {
 
         LinearLayout header = cardColumn();
         header.setPadding(dp(20), dp(16), dp(20), dp(22));
+        header.setBackground(gameGradient(Color.argb(253,255,255,255),Color.argb(250,232,249,255),NEON,26));
 
         LinearLayout top = new LinearLayout(this);
         top.setOrientation(LinearLayout.HORIZONTAL);
@@ -2038,7 +2067,7 @@ public class MainActivity extends Activity {
 
         ImageView avatar = new ImageView(this);
         avatar.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        avatar.setBackground(circleDrawable(Color.WHITE, BLUE, 4));
+        avatar.setBackground(roundRect(Color.WHITE,30,NEON,3));
         avatar.setClipToOutline(true);
         String avatarUri = prefs.getString("avatar_uri", "");
         if (!avatarUri.isEmpty()) {
@@ -2171,16 +2200,24 @@ public class MainActivity extends Activity {
     private View profileStat(String emoji, String value, String labelText) {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
-        box.setPadding(dp(8), dp(8), dp(8), dp(8));
-        TextView valueView = label(emoji + "  " + value, 20, BLUE_DARK, true);
-        box.addView(valueView);
-        TextView labelView = label(labelText, 12, MUTED, false);
-        labelView.setPadding(dp(28), dp(2), 0, 0);
-        box.addView(labelView);
+        box.setPadding(dp(10),dp(10),dp(10),dp(10));
+        int fill = "🔥".equals(emoji) ? Color.rgb(255,242,228) :
+                   "⚡".equals(emoji) ? Color.rgb(255,251,227) :
+                   "📘".equals(emoji) ? Color.rgb(227,244,255) :
+                   Color.rgb(255,235,244);
+        box.setBackground(roundRect(fill,18,Color.rgb(239,245,253),1));
+        TextView count = label(emoji + "  " + value, 19, BLUE_DARK, true);
+        box.addView(count);
+        TextView description = label(labelText, 13, MUTED, false);
+        description.setPadding(dp(26),dp(2),0,0);
+        box.addView(description);
+        LinearLayout.LayoutParams margins = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
+        margins.setMargins(dp(2),dp(2),dp(2),dp(2));
+        box.setLayoutParams(margins);
         return box;
     }
 
-    private View achievementTile(String emoji, String title, boolean unlocked) {
+        private View achievementTile(String emoji, String title, boolean unlocked) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setGravity(Gravity.CENTER);
@@ -2226,7 +2263,7 @@ public class MainActivity extends Activity {
     }
 
     private void showEditProfile() {
-        setRootWithArt(R.drawable.london_route_art);
+        setRootWithArt(R.drawable.game_london_night);
         LinearLayout page = pageColumn();
         page.addView(nativeBackBar("Editar perfil", () -> showProfile()));
         ScrollView scroll = new ScrollView(this);
@@ -2284,6 +2321,7 @@ public class MainActivity extends Activity {
         if (lessonIndex < 0 || lessonIndex >= lessons.length) return;
         currentLesson = lessonIndex;
         currentQuestion = 0;
+        lessonMistakes = 0;
         showExercise();
     }
 
@@ -2308,12 +2346,13 @@ public class MainActivity extends Activity {
         selectedChoice = "";
         selectedWords.clear();
 
-        setRootWithArt(R.drawable.london_exercise_art);
+        setRootWithArt(R.drawable.game_london_night_2);
 
         LinearLayout page = new LinearLayout(this);
         page.setOrientation(LinearLayout.VERTICAL);
         page.setPadding(dp(14), dp(8), dp(14), dp(12));
         root.addView(page, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        page.addView(gameResourceHud(),matchWrapMargin(0,0,0,5));
 
         LinearLayout top = new LinearLayout(this);
         top.setOrientation(LinearLayout.HORIZONTAL);
@@ -2504,7 +2543,7 @@ public class MainActivity extends Activity {
 
     private void showFeedback(boolean correct, String given) {
         if (correct) awardXp(10);
-        else loseHeart();
+        else { lessonMistakes++; loseHeart(); }
 
         final FrameLayout overlay = new FrameLayout(this);
         overlay.setBackgroundColor(Color.argb(100, 0, 25, 55));
@@ -2550,8 +2589,11 @@ public class MainActivity extends Activity {
 
     private void completeLesson() {
         boolean wasDone = prefs.getBoolean("lesson_" + currentLesson, false);
+        int currentStars = lessonMistakes == 0 ? 3 : (lessonMistakes <= 2 ? 2 : 1);
+        int previousStars = prefs.getInt("stars_" + currentLesson, 0);
         SharedPreferences.Editor e = prefs.edit();
         e.putBoolean("lesson_" + currentLesson, true);
+        e.putInt("stars_" + currentLesson, Math.max(previousStars,currentStars));
         if (!wasDone) {
             e.putInt("xp", prefs.getInt("xp", 0) + (currentLesson == lessons.length - 1 ? 100 : 50));
             e.putInt("coins", prefs.getInt("coins", 0) + (currentLesson == lessons.length - 1 ? 40 : 15));
@@ -2559,15 +2601,19 @@ public class MainActivity extends Activity {
         e.apply();
         updateStreak();
 
-        setRootWithArt(R.drawable.london_route_art);
+        setRootWithArt(R.drawable.game_london_night);
         LinearLayout done = cardColumn();
         done.setGravity(Gravity.CENTER);
         done.setPadding(dp(26), dp(30), dp(26), dp(30));
-        done.addView(label(currentLesson == lessons.length - 1 ? "🏆" : "🎉", 64, BLUE_DARK, true));
+        done.addView(label(currentLesson == lessons.length - 1 ? "🏆" : "🐦", 64, BLUE_DARK, true));
+        TextView stars = label(currentStars == 3 ? "★  ★  ★" : currentStars == 2 ? "★  ★  ☆" : "★  ☆  ☆",41,Color.rgb(255,180,17),true);
+        stars.setGravity(Gravity.CENTER);
+        done.addView(stars);
         TextView h = label(currentLesson == lessons.length - 1 ? "¡Aventura inicial completada!" : "¡Misión completada!", 30, BLUE_DARK, true);
         h.setGravity(Gravity.CENTER);
         done.addView(h);
-        TextView xp = label(currentLesson == lessons.length - 1 ? "⚡ +100 XP    🪙 +40" : "⚡ +50 XP    🪙 +15", 22, GREEN, true);
+        TextView xp = label(wasDone ? "Repetición · Estrellas: " + currentStars + "/3" :
+                (currentLesson == lessons.length - 1 ? "⚡ +100 XP    💎 +40" : "⚡ +50 XP    💎 +15"), 20, GREEN, true);
         xp.setGravity(Gravity.CENTER);
         xp.setPadding(0, dp(8), 0, dp(18));
         done.addView(xp);
@@ -2752,7 +2798,15 @@ public class MainActivity extends Activity {
         TextView b = label(text, 17, fg, true);
         b.setGravity(Gravity.CENTER);
         b.setPadding(dp(16), dp(15), dp(16), dp(15));
-        b.setBackground(roundRect(bg, 18, Color.argb(80, 0, 0, 0), 1));
+        if (bg == LIME || bg == GREEN) {
+            b.setBackground(gameGradient(Color.rgb(128, 255, 55), Color.rgb(63, 222, 43), Color.rgb(216, 255, 107), 18));
+        } else if (bg == BLUE || bg == Color.rgb(72, 184, 238)) {
+            b.setBackground(gameGradient(Color.rgb(12, 202, 255), Color.rgb(0, 91, 237), NEON, 18));
+        } else {
+            b.setBackground(roundRect(bg, 18, Color.argb(135, 0, 102, 227), 2));
+        }
+        b.setClickable(true);
+        b.setFocusable(true);
         b.setElevation(dp(5));
         return b;
     }
@@ -2770,7 +2824,7 @@ public class MainActivity extends Activity {
         v.setText(text);
         v.setTextSize(sp);
         v.setTextColor(color);
-        v.setTypeface(Typeface.create("sans", bold ? Typeface.BOLD : Typeface.NORMAL));
+        v.setTypeface(Typeface.create(bold ? "sans-serif-rounded" : "sans-serif", bold ? Typeface.BOLD : Typeface.NORMAL));
         v.setLineSpacing(0f, 1.06f);
         return v;
     }
@@ -2778,7 +2832,7 @@ public class MainActivity extends Activity {
     private LinearLayout cardColumn() {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setBackground(roundRect(Color.argb(247, 255, 255, 255), 24, Color.rgb(181, 218, 239), 1));
+        card.setBackground(gameGradient(Color.argb(251, 255, 255, 255), Color.argb(247, 234, 248, 255), Color.rgb(136, 218, 255), 25));
         card.setElevation(dp(6));
         return card;
     }

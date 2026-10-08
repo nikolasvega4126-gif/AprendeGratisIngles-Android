@@ -1,20 +1,22 @@
-# Bluelingo 8.3.0: compilar para Google Play
+# Bluelingo 8.4.0 · Build para pruebas y Play Store
 
-- Paquete Android: `com.aprendegratisingles.app`
-- `versionName`: `8.3.0`
-- `versionCode`: **46** (posterior al código 42 de la prueba cerrada)
-- `compileSdk / targetSdk`: 36
+- Android package / applicationId: `com.aprendegratisingles.app`
+- `versionName`: `8.4.0`
+- `versionCode`: `47`
+- `compileSdk` y `targetSdk`: `36`
 
-## 1. APK para probar en el teléfono
+## Primera prueba: APK
 
-Sube **los archivos descomprimidos** de este proyecto al mismo repositorio GitHub, con su estructura de carpetas intacta. GitHub Actions → **Build and validate Android APK** → ejecuta o espera a que el push dispare el flujo. Si finaliza correctamente, descarga el artefacto `Bluelingo-v8.3.0-apk` e instala `app-debug.apk` en un dispositivo de prueba.
+1. Descomprimir el ZIP y subir el contenido a la raíz de tu repositorio GitHub `nikolasvega4126-gif/AprendeGratisIngles-Android` conservando carpetas.
+2. GitHub > Actions > **Build and validate Android APK**.
+3. Al terminar, descargar **Bluelingo-v8.4.0-apk** desde Artifacts, descomprimir e instalar `app-debug.apk` en Android.
+4. Abrir Aventura, Practicar, Sonidos y Perfil, comprobar los seis dibujos, botones de sonido, cofres, lecciones y video inicial. Revisar artefacto `Bluelingo-v8.4.0-ui-validation` cuando la tarea de emulador termine.
 
-## 2. AAB para Google Play
+## Actualizar prueba cerrada Google Play
 
-GitHub Actions → **Build unsigned Play AAB v8.3.0** → `Run workflow`. El archivo AAB generado es **sin firma** y todavía NO se puede subir a Play Console. Debes firmarlo con el **keystore de subida original usado para la versión 42** y verificar la firma. No crees otro keystore, porque Google podría rechazar la actualización.
+1. Solo después de validar el APK, generar bundle `.aab` con **Build unsigned Play AAB v8.4.0**.
+2. El bundle del workflow es **sin firma**. Debe firmarse con el mismo keystore de subida original usado para la versión 42.
+3. Verificar la firma y subir el AAB de código **47** en una nueva versión de prueba cerrada.
+4. No subir un APK debug ni el AAB sin firma a Play Console.
 
-El flujo antiguo `build-play-aab.yml` dependía de secretos que antes dieron errores de reconstrucción/contraseña. Este ZIP incluye la ruta de compilación sin firma para mantener separados la compilación y el firmado.
-
-## Seguridad
-
-Nunca subas el `.jks`, contraseñas ni texto Base64 del keystore al repositorio. Esta entrega tampoco los incluye.
+**No incluyas la clave .jks ni sus contraseñas dentro del repositorio o del ZIP.**

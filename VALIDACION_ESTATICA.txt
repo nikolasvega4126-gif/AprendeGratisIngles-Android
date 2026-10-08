@@ -1,3 +1,12 @@
-BLUELINGO v8.3.0
-Verificaciones locales de estructura: comprobar archivos de recursos, nodos nativos, estados y claves, primer video y valor de versionCode.
-Compilación Android: pendiente de ejecutar el workflow de GitHub Actions (no hay Android SDK local).
+BLUELINGO 8.4.0 · Código de versión 47
+
+OK: 21 verificaciones estáticas (tools/validate_design.py)
+OK: referencias R.drawable todas presentes
+OK: archivos de imágenes PNG/JPEG verificados
+OK: YAML de GitHub Actions leído correctamente
+OK: pruebas estáticas del workflow (comandos bash)
+OK: delimitadores y bloques principales del código Java equilibrados
+
+PENDIENTE: compilar el APK y ejecutar Android emulator smoke test en GitHub Actions.
+PENDIENTE: prueba manual táctil/visual en dispositivo físico.
+Esto es proyecto fuente, no APK/AAB ya compilado.

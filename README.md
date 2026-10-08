@@ -1,11 +1,40 @@
-# Bluelingo 8.3.0 · Aventura en Londres
+# Bluelingo 8.4.0 · Diseño de aventura (Android nativo)
 
-Proyecto Android nativo (`com.aprendegratisingles.app`).
+Este proyecto continúa la app Bluelingo existente. Se conserva `applicationId=com.aprendegratisingles.app`.
 
-La primera fase del rediseño estilo videojuego implementa una **ruta de diez lecciones** en dos tramos, con ilustración nocturna de Londres, personaje azul, orbes 3D, niveles con desbloqueo real, XP, monedas, rachas y cofres reclamables una sola vez. Los nodos son vistas Android interactivas (no capturas con zonas táctiles falsas). Los ejercicios existentes conservan su funcionalidad, audio estadounidense y guías de pronunciación para principiantes.
+## Diseño implementado
 
-Video de inicio y onboarding de jugador de 8.2.x se mantienen. Se agregó el acceso público a la política de privacidad desde Perfil.
+- Video H.264 original en `app/src/main/res/raw/startup.mp4`, entrada tras 3 min y onboarding persistente.
+- Creación de jugador con @usuario, nivel, objetivo y minutos al día.
+- Aventura vertical por Londres nocturno: fondos ilustrados + botones Android individuales (NO capturas táctiles), diez lecciones, candados, cofres y ruta luminosa.
+- HUD compartido con vidas, racha, diamantes/monedas y XP.
+- Navegación inferior azul neón: Aventura, Practicar, Sonidos, Perfil.
+- Practicar con portada ilustrada, guía, pajarito y tarjetas de misiones reales.
+- Sonidos con **las seis figuras originales del diseño aprobado** (gato, taza, niño, ojo, cama, carro), más las demás vocales y consonantes.
+- Entrenamiento de escucha con audio, respuestas, progreso y botón Comprobar en ScrollView adaptable.
+- Lecciones con audio estadounidense, pronunciación fácil sin IPA, traducción, ejercicios y micrófono.
+- Perfil con XP/racha/progreso real y enlace a la política de privacidad.
 
-**Compilación:** GitHub Actions → `Build and validate Android APK` → artifact `Bluelingo-v8.3.0-apk`; para la tienda `Build unsigned Play AAB v8.3.0` y firmar el AAB con **el keystore de subida original**. Código de versión `46` y nombre de versión `8.3.0`. El AAB sin firmar **no sirve para subirlo directamente a Play**.
+## Android
 
-Esta entrega contiene proyecto fuente y arte incluido; no incluye APK firmado ni certificación de que el build haya pasado un emulador. Consultar `REDISENO_AVENTURA_V8_3_0.md`.
+- App: Bluelingo
+- applicationId: `com.aprendegratisingles.app`
+- VersionName: `8.4.0`
+- VersionCode: `47`
+- MinSdk: 24, TargetSdk: 36
+- Sin WebView dentro de lecciones.
+
+## Compilar y probar
+
+1. Subir **los archivos descomprimidos** a la raíz del repositorio de GitHub existente.
+2. GitHub > Actions > **Build and validate Android APK** > Run workflow.
+3. Esperar `build` verde; descargar Artifact `Bluelingo-v8.4.0-apk`.
+4. Si aparece verde el `emulator-smoke-test`, descargar `Bluelingo-v8.4.0-ui-validation` y revisar capturas.
+5. Instalar el APK de pruebas en Android y comprobar los toques, el scroll, la voz y la navegación.
+6. Para Google Play se requiere un **AAB release firmado con la misma clave de subida original**. El APK de depuración no se debe publicar.
+
+El workflow alternativo `Build unsigned Play AAB` crea el bundle sin firma. Se debe firmar con la clave de subida original antes de enviarlo a Play Console.
+
+## Alcance de la validación
+
+`python tools/validate_design.py` verifica 21 invariantes de código/recursos y manifiesto. **No sustituye la compilación Android ni la prueba visual en teléfono.**

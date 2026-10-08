@@ -1011,17 +1011,11 @@ public class MainActivity extends Activity {
         final int targetCenter=(section==0 ? mapHeight : 0) +
                 Math.round(levelY[next%5]*mapHeight);
         scroll.post(() -> scroll.scrollTo(0,Math.max(0,targetCenter-scroll.getHeight()/2)));
-        menu.setOnClickListener(v -> new android.app.AlertDialog.Builder(this)
-                .setTitle("🗺️  Tu aventura")
-                .setItems(new String[]{"Sección 1 · Lecciones 1–5", "Sección 2 · Lecciones 6–10"},
-                        (dialog,selected) -> {
-                            if (selected == 1 && !prefs.getBoolean("lesson_4",false)) {
-                                Toast.makeText(this,"Completa la lección 5 para desbloquear esta sección",Toast.LENGTH_LONG).show();
-                                return;
-                            }
-                            scroll.smoothScrollTo(0,selected == 0 ? mapHeight : 0);
-                        })
-                .setNegativeButton("CERRAR",null).show());
+        // 8.4.2: saltar de sección al tocar el menú, sin ventana modal.
+        menu.setOnClickListener(v -> {
+            int destination = scroll.getScrollY() < mapHeight ? mapHeight : 0;
+            scroll.smoothScrollTo(0, destination);
+        });
     }
 
     private int firstNotCompletedGameLesson() {
@@ -1167,19 +1161,13 @@ public class MainActivity extends Activity {
     }
 
     private void openGameLesson(int index) {
-        boolean done=prefs.getBoolean("lesson_"+index,false);
         boolean unlocked=index==0 || prefs.getBoolean("lesson_"+(index-1),false);
         if(!unlocked) {
             Toast.makeText(this,"🔒 Completa la lección "+index+" para desbloquearla",Toast.LENGTH_LONG).show();
             return;
         }
-        Lesson chosen=lessons[index];
-        new android.app.AlertDialog.Builder(this)
-                .setTitle("⭐ LECCIÓN " +(index+1)+" · "+chosen.title)
-                .setMessage(chosen.subtitle+"\n\n"+(done?"Ya completaste esta misión. Puedes volver a jugarla.":"Recompensa al completar: +50 XP y +15 monedas."))
-                .setPositiveButton(done?"REPETIR":"EMPEZAR",(dialog,which)->startLessonFromRoute(index))
-                .setNegativeButton("CANCELAR",null)
-                .show();
+        // Abrir directamente los ejercicios, también al repetir una lección.
+        startLessonFromRoute(index);
     }
 
     private void openGameTreasure(int section) {
@@ -1342,25 +1330,11 @@ public class MainActivity extends Activity {
         body.setOrientation(LinearLayout.VERTICAL);
         body.setPadding(dp(2), dp(15), dp(2), dp(22));
         scroll.addView(body);
-        LinearLayout hero = cardColumn();
-        hero.setPadding(dp(17), dp(16), dp(17), dp(18));
-        hero.addView(label("📚  CENTRO DE PRÁCTICA", 13, BLUE, true));
-        LinearLayout titleRow = new LinearLayout(this);
-        titleRow.setGravity(Gravity.CENTER_VERTICAL);
-        titleRow.setOrientation(LinearLayout.HORIZONTAL);
-        LinearLayout words = new LinearLayout(this);
-        words.setOrientation(LinearLayout.VERTICAL);
-        words.addView(label("Aprende, escucha\ny repite", 26, BLUE_DARK, true));
-        TextView copy = label("Lecciones, sonidos y vocabulario. Todo dentro del juego.", 14, MUTED, false);
-        copy.setPadding(0, dp(8), 0, 0);
-        words.addView(copy);
-        titleRow.addView(words, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        titleRow.addView(gameHeroCharacters(), new LinearLayout.LayoutParams(dp(123), dp(138)));
-        hero.addView(titleRow, matchWrapMargin(0, 10, 0, 12));
-        TextView start = actionButton("▶  CONTINUAR PRÁCTICA", LIME, BLUE_DARK);
-        start.setOnClickListener(v -> startLessonFromPractice(firstUnlockedPracticeLesson()));
-        hero.addView(start);
-        body.addView(hero, matchWrapMargin(0, 0, 0, 12));
+        // V8.4.1: imagen aprobada usada como portada con ImageButton NATIVO y toque real.
+        // Solo este encabezado cambia. Las pestañas y las lecciones inferiores siguen intactas.
+        body.addView(illustratedActionBanner(R.drawable.hero_practice_841,
+                "Continuar práctica de inglés", v -> startLessonFromPractice(firstUnlockedPracticeLesson())),
+                matchWrapMargin(0, 0, 0, 12));
 
         LinearLayout selector = new LinearLayout(this);
         selector.setOrientation(LinearLayout.HORIZONTAL);
@@ -1729,23 +1703,10 @@ public class MainActivity extends Activity {
         body.setOrientation(LinearLayout.VERTICAL);
         body.setPadding(dp(2),dp(15),dp(2),dp(24));
         scroll.addView(body);
-        LinearLayout hero=cardColumn();
-        hero.setPadding(dp(17),dp(16),dp(17),dp(18));
-        hero.addView(label("👄  ENTRENADOR DE SONIDOS",13,BLUE,true));
-        LinearLayout heroRow=new LinearLayout(this);
-        heroRow.setGravity(Gravity.CENTER_VERTICAL);
-        LinearLayout text=new LinearLayout(this);
-        text.setOrientation(LinearLayout.VERTICAL);
-        text.addView(label("¡Mejora tu pronunciación del inglés!",24,BLUE_DARK,true));
-        TextView sub=label("Escucha, compara y repite. Sin símbolos difíciles.",14,MUTED,false);
-        sub.setPadding(0,dp(8),0,0);text.addView(sub);
-        heroRow.addView(text,new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1f));
-        heroRow.addView(gameHeroCharacters(),new LinearLayout.LayoutParams(dp(123),dp(138)));
-        hero.addView(heroRow,matchWrapMargin(0,10,0,10));
-        TextView start=actionButton("▶  EMPEZAR LECCIÓN",BLUE,Color.WHITE);
-        start.setOnClickListener(v->startSoundQuiz());
-        hero.addView(start);
-        body.addView(hero,matchWrapMargin(0,0,0,12));
+        // V8.4.1: imagen aprobada usada como portada, conservando el reto de audio.
+        body.addView(illustratedActionBanner(R.drawable.hero_sounds_841,
+                "Mejora tu pronunciación del inglés. EMPEZAR LECCIÓN", v -> startSoundQuiz()),
+                matchWrapMargin(0, 0, 0, 12));
         LinearLayout progress=cardColumn();
         progress.setPadding(dp(15),dp(14),dp(15),dp(14));
         progress.addView(label("🎧  Tu progreso de pronunciación",18,BLUE_DARK,true));
@@ -1758,6 +1719,30 @@ public class MainActivity extends Activity {
         page.addView(scroll,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,0,1f));
         page.addView(bottomNav(2));
         root.addView(page);
+    }
+
+
+    /** V8.4.1: portada ilustrada EXACTA sobre un botón real de Android.
+     * El diseño, texto y arte pertenecen a la imagen aprobada y conservan su relación 2:1.
+     * El botón es accesible, enfocables y ejecuta la misma acción de 8.4.0.
+     */
+    private View illustratedActionBanner(int imageRes, String description, View.OnClickListener action) {
+        android.widget.ImageButton banner = new android.widget.ImageButton(this);
+        banner.setImageResource(imageRes);
+        banner.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        banner.setAdjustViewBounds(true);
+        banner.setMinimumHeight(0);
+        banner.setPadding(0, 0, 0, 0);
+        banner.setBackgroundColor(Color.TRANSPARENT);
+        banner.setContentDescription(description);
+        banner.setClickable(true);
+        banner.setFocusable(true);
+        banner.setElevation(dp(5));
+        banner.setOnClickListener(v -> {
+            pulse(banner);
+            action.onClick(v);
+        });
+        return banner;
     }
 
     /** Decorative guide made from the user's own visual references, not a clickable screenshot. */
@@ -1808,15 +1793,17 @@ public class MainActivity extends Activity {
         card.setPadding(dp(5),dp(8),dp(5),dp(9));
         card.setBackground(gameGradient(Color.WHITE,Color.rgb(240,250,255),Color.rgb(85,215,255),18));
         card.setElevation(dp(4));
-        int art = 0;
+        // Las primeras seis imágenes permanecen idénticas; todas las demás ahora
+        // tienen su propia ilustración volumétrica PNG en drawable-nodpi.
+        int art = soundArtFor(sound.example);
         String name = sound.symbol;
         switch (sound.key) {
-            case "ae": art=R.drawable.sound_cat; name="A abierta"; break;
-            case "uh": art=R.drawable.sound_cup; name="A central"; break;
-            case "i_short": art=R.drawable.sound_sit; name="I corta"; break;
-            case "i_long": art=R.drawable.sound_see; name="I larga"; break;
-            case "e_short": art=R.drawable.sound_bed; name="E abierta"; break;
-            case "a_long": art=R.drawable.sound_car; name="AR inglesa"; break;
+            case "ae": name="A abierta"; break;
+            case "uh": name="A central"; break;
+            case "i_short": name="I corta"; break;
+            case "i_long": name="I larga"; break;
+            case "e_short": name="E abierta"; break;
+            case "a_long": name="AR inglesa"; break;
         }
         if (art != 0) {
             ImageView picture = new ImageView(this);
@@ -1847,6 +1834,49 @@ public class MainActivity extends Activity {
             // Exploring a tile does not count as demonstrated mastery.
         });
         return card;
+    }
+
+    /** Recursos locales: ninguna tarjeta depende de internet ni de iconos Unicode del equipo. */
+    private int soundArtFor(String example) {
+        switch (example) {
+            case "cat": return R.drawable.sound_cat;
+            case "cup": return R.drawable.sound_cup;
+            case "sit": return R.drawable.sound_sit;
+            case "see": return R.drawable.sound_see;
+            case "bed": return R.drawable.sound_bed;
+            case "car": return R.drawable.sound_car;
+            case "hot": return R.drawable.sound_hot;
+            case "saw": return R.drawable.sound_saw;
+            case "book": return R.drawable.sound_book;
+            case "food": return R.drawable.sound_food;
+            case "about": return R.drawable.sound_about;
+            case "bird": return R.drawable.sound_bird;
+            case "day": return R.drawable.sound_day;
+            case "time": return R.drawable.sound_time;
+            case "boy": return R.drawable.sound_boy;
+            case "cow": return R.drawable.sound_cow;
+            case "go": return R.drawable.sound_go;
+            case "chair": return R.drawable.sound_chair;
+            case "fish": return R.drawable.sound_fish;
+            case "home": return R.drawable.sound_home;
+            case "job": return R.drawable.sound_job;
+            case "key": return R.drawable.sound_key;
+            case "lion": return R.drawable.sound_lion;
+            case "moon": return R.drawable.sound_moon;
+            case "nose": return R.drawable.sound_nose;
+            case "sing": return R.drawable.sound_sing;
+            case "pig": return R.drawable.sound_pig;
+            case "red": return R.drawable.sound_red;
+            case "shoe": return R.drawable.sound_shoe;
+            case "think": return R.drawable.sound_think;
+            case "this": return R.drawable.sound_this;
+            case "van": return R.drawable.sound_van;
+            case "water": return R.drawable.sound_water;
+            case "yes": return R.drawable.sound_yes;
+            case "zoo": return R.drawable.sound_zoo;
+            case "vision": return R.drawable.sound_vision;
+            default: return 0;
+        }
     }
 
     private void startSoundQuiz() {

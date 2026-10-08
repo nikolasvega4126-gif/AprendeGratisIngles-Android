@@ -1,12 +1,8 @@
-BLUELINGO 8.4.0 · Código de versión 47
+Bluelingo 8.4.2 | CÓDIGO 49
 
-OK: 21 verificaciones estáticas (tools/validate_design.py)
-OK: referencias R.drawable todas presentes
-OK: archivos de imágenes PNG/JPEG verificados
-OK: YAML de GitHub Actions leído correctamente
-OK: pruebas estáticas del workflow (comandos bash)
-OK: delimitadores y bloques principales del código Java equilibrados
-
-PENDIENTE: compilar el APK y ejecutar Android emulator smoke test en GitHub Actions.
-PENDIENTE: prueba manual táctil/visual en dispositivo físico.
-Esto es proyecto fuente, no APK/AAB ya compilado.
+28 pruebas de integridad de recursos/arquitectura: OK
+36 ilustraciones asignadas a 41 sonidos (17 vocales + 24 consonantes): OK
+6 PNG originales idénticos a 8.4.1: OK
+Ventana emergente de lección eliminada: OK
+Menú de seis rayitas navega sin ventana emergente: OK
+APK no compilado en este entorno; ejecutar GitHub Actions.

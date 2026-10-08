@@ -1,4 +1,4 @@
-# Bluelingo 8.4.0 · Diseño de aventura (Android nativo)
+# Bluelingo 8.4.2 · Diseño de aventura (Android nativo)
 
 Este proyecto continúa la app Bluelingo existente. Se conserva `applicationId=com.aprendegratisingles.app`.
 
@@ -19,7 +19,7 @@ Este proyecto continúa la app Bluelingo existente. Se conserva `applicationId=c
 
 - App: Bluelingo
 - applicationId: `com.aprendegratisingles.app`
-- VersionName: `8.4.0`
+- VersionName: `8.4.2`
 - VersionCode: `47`
 - MinSdk: 24, TargetSdk: 36
 - Sin WebView dentro de lecciones.
@@ -28,8 +28,8 @@ Este proyecto continúa la app Bluelingo existente. Se conserva `applicationId=c
 
 1. Subir **los archivos descomprimidos** a la raíz del repositorio de GitHub existente.
 2. GitHub > Actions > **Build and validate Android APK** > Run workflow.
-3. Esperar `build` verde; descargar Artifact `Bluelingo-v8.4.0-apk`.
-4. Si aparece verde el `emulator-smoke-test`, descargar `Bluelingo-v8.4.0-ui-validation` y revisar capturas.
+3. Esperar `build` verde; descargar Artifact `Bluelingo-v8.4.2-apk`.
+4. Si aparece verde el `emulator-smoke-test`, descargar `Bluelingo-v8.4.2-ui-validation` y revisar capturas.
 5. Instalar el APK de pruebas en Android y comprobar los toques, el scroll, la voz y la navegación.
 6. Para Google Play se requiere un **AAB release firmado con la misma clave de subida original**. El APK de depuración no se debe publicar.
 
@@ -38,3 +38,12 @@ El workflow alternativo `Build unsigned Play AAB` crea el bundle sin firma. Se d
 ## Alcance de la validación
 
 `python tools/validate_design.py` verifica 21 invariantes de código/recursos y manifiesto. **No sustituye la compilación Android ni la prueba visual en teléfono.**
+
+
+Para esta actualización puntual, ver `CAMBIOS_V8_4_1.md`.
+
+### Novedades 8.4.2
+- Todas las tarjetas de vocales y consonantes tienen una figura ilustrada.
+- Primeras seis figuras conservadas sin modificaciones.
+- Tocar una lección disponible la abre directamente.
+- Botón de seis rayas cambia la sección del mapa sin diálogos.

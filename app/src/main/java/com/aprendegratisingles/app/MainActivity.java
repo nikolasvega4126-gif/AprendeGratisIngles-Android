@@ -190,232 +190,232 @@ public class MainActivity extends Activity {
     // No se abre ningún WebView: todo vive dentro de la app y usa el TTS de Android.
     private final StudyLesson[] studyLessons = new StudyLesson[]{
             new StudyLesson("Tiempo y frecuencia", "Palabras para hablar de cuándo ocurre algo.", 7, new StudyItem[]{
-                    new StudyItem("Today", "/təˈdeɪ/", "Hoy"),
-                    new StudyItem("Right now", "/raɪt ˈnaʊ/", "Ahora mismo"),
-                    new StudyItem("Tomorrow", "/təˈmɑroʊ/", "Mañana"),
-                    new StudyItem("Every day", "/ˈɛvri deɪ/", "Todos los días"),
-                    new StudyItem("Yesterday", "/ˈjɛstərdeɪ/", "Ayer"),
-                    new StudyItem("This morning", "/ðɪs ˈmɔrnɪŋ/", "Esta mañana"),
-                    new StudyItem("Always", "/ˈɔlweɪz/", "Siempre"),
-                    new StudyItem("This week", "/ðɪs wik/", "Esta semana"),
-                    new StudyItem("Never", "/ˈnɛvər/", "Nunca"),
-                    new StudyItem("Sometimes", "/ˈsʌmtaɪmz/", "A veces"),
-                    new StudyItem("Usually", "/ˈjuʒuəli/", "Normalmente")
+                    new StudyItem("Today", "tudéi", "Hoy"),
+                    new StudyItem("Right now", "ráit náu", "Ahora mismo"),
+                    new StudyItem("Tomorrow", "tumárou", "Mañana"),
+                    new StudyItem("Every day", "évri déi", "Todos los días"),
+                    new StudyItem("Yesterday", "yésterdei", "Ayer"),
+                    new StudyItem("This morning", "dhis mórnin", "Esta mañana"),
+                    new StudyItem("Always", "ólueiz", "Siempre"),
+                    new StudyItem("This week", "dhis uík", "Esta semana"),
+                    new StudyItem("Never", "néver", "Nunca"),
+                    new StudyItem("Sometimes", "sómtaimz", "A veces"),
+                    new StudyItem("Usually", "iúshuali", "Normalmente")
             }),
             new StudyLesson("Saludos y cortesía", "Frases esenciales para iniciar y terminar conversaciones.", 0, new StudyItem[]{
-                    new StudyItem("Hello", "/həˈloʊ/", "Hola"),
-                    new StudyItem("Hi", "/haɪ/", "Hola / Buenas"),
-                    new StudyItem("Good morning", "/ɡʊd ˈmɔrnɪŋ/", "Buenos días"),
-                    new StudyItem("Good afternoon", "/ɡʊd ˌæftərˈnun/", "Buenas tardes"),
-                    new StudyItem("Good evening", "/ɡʊd ˈivnɪŋ/", "Buenas noches"),
-                    new StudyItem("Goodbye", "/ˌɡʊdˈbaɪ/", "Adiós"),
-                    new StudyItem("Please", "/pliz/", "Por favor"),
-                    new StudyItem("Thank you", "/θæŋk ju/", "Gracias"),
-                    new StudyItem("You're welcome", "/jʊr ˈwɛlkəm/", "De nada"),
-                    new StudyItem("Excuse me", "/ɪkˈskjuz mi/", "Disculpe")
+                    new StudyItem("Hello", "helóu", "Hola"),
+                    new StudyItem("Hi", "hái", "Hola / Buenas"),
+                    new StudyItem("Good morning", "gud mórnin", "Buenos días"),
+                    new StudyItem("Good afternoon", "gud afternún", "Buenas tardes"),
+                    new StudyItem("Good evening", "gud ívning", "Buenas noches"),
+                    new StudyItem("Goodbye", "gudbái", "Adiós"),
+                    new StudyItem("Please", "plís", "Por favor"),
+                    new StudyItem("Thank you", "thánk iu", "Gracias"),
+                    new StudyItem("You're welcome", "ior uélkam", "De nada"),
+                    new StudyItem("Excuse me", "ekskiús mi", "Disculpe")
             }),
             new StudyLesson("Presentaciones", "Preséntate y pregunta el nombre de otra persona.", 1, new StudyItem[]{
-                    new StudyItem("My name is…", "/maɪ neɪm ɪz/", "Mi nombre es…"),
-                    new StudyItem("I am…", "/aɪ æm/", "Yo soy…"),
-                    new StudyItem("What is your name?", "/wʌt ɪz jʊr neɪm/", "¿Cómo te llamas?"),
-                    new StudyItem("Nice to meet you", "/naɪs tə mit ju/", "Mucho gusto"),
-                    new StudyItem("How are you?", "/haʊ ɑr ju/", "¿Cómo estás?"),
-                    new StudyItem("I am fine", "/aɪ æm faɪn/", "Estoy bien"),
-                    new StudyItem("And you?", "/ænd ju/", "¿Y tú?"),
-                    new StudyItem("This is my friend", "/ðɪs ɪz maɪ frɛnd/", "Este es mi amigo")
+                    new StudyItem("My name is…", "mái néim iz", "Mi nombre es…"),
+                    new StudyItem("I am…", "ái am", "Yo soy…"),
+                    new StudyItem("What is your name?", "uát iz ior néim", "¿Cómo te llamas?"),
+                    new StudyItem("Nice to meet you", "náis tu mít iu", "Mucho gusto"),
+                    new StudyItem("How are you?", "háu ar iu", "¿Cómo estás?"),
+                    new StudyItem("I am fine", "ái am fáin", "Estoy bien"),
+                    new StudyItem("And you?", "and iu", "¿Y tú?"),
+                    new StudyItem("This is my friend", "dhis iz mái frend", "Este es mi amigo")
             }),
             new StudyLesson("Países y origen", "Pregunta y responde de dónde eres.", 2, new StudyItem[]{
-                    new StudyItem("Where are you from?", "/wɛr ɑr ju frʌm/", "¿De dónde eres?"),
-                    new StudyItem("I am from Poland", "/aɪ æm frʌm ˈpoʊlənd/", "Soy de Polonia"),
-                    new StudyItem("France", "/fræns/", "Francia"),
-                    new StudyItem("Spain", "/speɪn/", "España"),
-                    new StudyItem("Germany", "/ˈdʒɝməni/", "Alemania"),
-                    new StudyItem("Italy", "/ˈɪtəli/", "Italia"),
-                    new StudyItem("England", "/ˈɪŋɡlənd/", "Inglaterra"),
-                    new StudyItem("I live in…", "/aɪ lɪv ɪn/", "Vivo en…")
+                    new StudyItem("Where are you from?", "uér ar iu fram", "¿De dónde eres?"),
+                    new StudyItem("I am from Poland", "ái am fram póuland", "Soy de Polonia"),
+                    new StudyItem("France", "frans", "Francia"),
+                    new StudyItem("Spain", "spéin", "España"),
+                    new StudyItem("Germany", "yérmani", "Alemania"),
+                    new StudyItem("Italy", "ítali", "Italia"),
+                    new StudyItem("England", "íngland", "Inglaterra"),
+                    new StudyItem("I live in…", "ái liv in", "Vivo en…")
             }),
             new StudyLesson("Familia", "Vocabulario para hablar de las personas cercanas.", 5, new StudyItem[]{
-                    new StudyItem("Family", "/ˈfæməli/", "Familia"),
-                    new StudyItem("Mother", "/ˈmʌðər/", "Madre"),
-                    new StudyItem("Father", "/ˈfɑðər/", "Padre"),
-                    new StudyItem("Brother", "/ˈbrʌðər/", "Hermano"),
-                    new StudyItem("Sister", "/ˈsɪstər/", "Hermana"),
-                    new StudyItem("Son", "/sʌn/", "Hijo"),
-                    new StudyItem("Daughter", "/ˈdɔtər/", "Hija"),
-                    new StudyItem("This is my family", "/ðɪs ɪz maɪ ˈfæməli/", "Esta es mi familia")
+                    new StudyItem("Family", "fámali", "Familia"),
+                    new StudyItem("Mother", "mádher", "Madre"),
+                    new StudyItem("Father", "fádher", "Padre"),
+                    new StudyItem("Brother", "brádher", "Hermano"),
+                    new StudyItem("Sister", "síster", "Hermana"),
+                    new StudyItem("Son", "san", "Hijo"),
+                    new StudyItem("Daughter", "dóter", "Hija"),
+                    new StudyItem("This is my family", "dhis iz mái fámali", "Esta es mi familia")
             }),
             new StudyLesson("Casa y objetos", "Habitaciones y objetos que usas todos los días.", 6, new StudyItem[]{
-                    new StudyItem("House", "/haʊs/", "Casa"),
-                    new StudyItem("Kitchen", "/ˈkɪtʃən/", "Cocina"),
-                    new StudyItem("Bathroom", "/ˈbæθrum/", "Baño"),
-                    new StudyItem("Bedroom", "/ˈbɛdrum/", "Dormitorio"),
-                    new StudyItem("Door", "/dɔr/", "Puerta"),
-                    new StudyItem("Window", "/ˈwɪndoʊ/", "Ventana"),
-                    new StudyItem("Table", "/ˈteɪbəl/", "Mesa"),
-                    new StudyItem("Chair", "/tʃɛr/", "Silla"),
-                    new StudyItem("Where is the bathroom?", "/wɛr ɪz ðə ˈbæθrum/", "¿Dónde está el baño?")
+                    new StudyItem("House", "háus", "Casa"),
+                    new StudyItem("Kitchen", "kíchen", "Cocina"),
+                    new StudyItem("Bathroom", "báthrum", "Baño"),
+                    new StudyItem("Bedroom", "bédrum", "Dormitorio"),
+                    new StudyItem("Door", "dor", "Puerta"),
+                    new StudyItem("Window", "uíndou", "Ventana"),
+                    new StudyItem("Table", "téibol", "Mesa"),
+                    new StudyItem("Chair", "cher", "Silla"),
+                    new StudyItem("Where is the bathroom?", "uér iz dha báthrum", "¿Dónde está el baño?")
             }),
             new StudyLesson("Trabajo y profesiones", "Frases útiles para hablar del trabajo.", 8, new StudyItem[]{
-                    new StudyItem("Work", "/wɝk/", "Trabajo / trabajar"),
-                    new StudyItem("Job", "/dʒɑb/", "Empleo"),
-                    new StudyItem("Office", "/ˈɔfɪs/", "Oficina"),
-                    new StudyItem("Manager", "/ˈmænɪdʒər/", "Gerente"),
-                    new StudyItem("Driver", "/ˈdraɪvər/", "Conductor"),
-                    new StudyItem("Teacher", "/ˈtitʃər/", "Profesor"),
-                    new StudyItem("I work here", "/aɪ wɝk hɪr/", "Trabajo aquí"),
-                    new StudyItem("What do you do?", "/wʌt də ju du/", "¿A qué te dedicas?")
+                    new StudyItem("Work", "uérk", "Trabajo / trabajar"),
+                    new StudyItem("Job", "yab", "Empleo"),
+                    new StudyItem("Office", "ófis", "Oficina"),
+                    new StudyItem("Manager", "mánayer", "Gerente"),
+                    new StudyItem("Driver", "dráiver", "Conductor"),
+                    new StudyItem("Teacher", "tícher", "Profesor"),
+                    new StudyItem("I work here", "ái uérk hir", "Trabajo aquí"),
+                    new StudyItem("What do you do?", "uát du iu dú", "¿A qué te dedicas?")
             }),
             new StudyLesson("Viajes y transporte", "Inglés práctico para moverte por una ciudad.", 2, new StudyItem[]{
-                    new StudyItem("Airport", "/ˈɛrˌpɔrt/", "Aeropuerto"),
-                    new StudyItem("Train", "/treɪn/", "Tren"),
-                    new StudyItem("Bus", "/bʌs/", "Autobús"),
-                    new StudyItem("Ticket", "/ˈtɪkɪt/", "Billete"),
-                    new StudyItem("Hotel", "/hoʊˈtɛl/", "Hotel"),
-                    new StudyItem("Where is the station?", "/wɛr ɪz ðə ˈsteɪʃən/", "¿Dónde está la estación?"),
-                    new StudyItem("How much is the ticket?", "/haʊ mʌtʃ ɪz ðə ˈtɪkɪt/", "¿Cuánto cuesta el billete?"),
-                    new StudyItem("I need a taxi", "/aɪ nid ə ˈtæksi/", "Necesito un taxi")
+                    new StudyItem("Airport", "érport", "Aeropuerto"),
+                    new StudyItem("Train", "tréin", "Tren"),
+                    new StudyItem("Bus", "bas", "Autobús"),
+                    new StudyItem("Ticket", "tíkit", "Billete"),
+                    new StudyItem("Hotel", "houtél", "Hotel"),
+                    new StudyItem("Where is the station?", "uér iz dha stéishon", "¿Dónde está la estación?"),
+                    new StudyItem("How much is the ticket?", "háu mach iz dha tíkit", "¿Cuánto cuesta el billete?"),
+                    new StudyItem("I need a taxi", "ái níd a táksi", "Necesito un taxi")
             }),
             new StudyLesson("Comida y restaurante", "Pide comida y entiende frases básicas en un restaurante.", 9, new StudyItem[]{
-                    new StudyItem("Water", "/ˈwɔtər/", "Agua"),
-                    new StudyItem("Food", "/fud/", "Comida"),
-                    new StudyItem("Breakfast", "/ˈbrɛkfəst/", "Desayuno"),
-                    new StudyItem("Lunch", "/lʌntʃ/", "Almuerzo"),
-                    new StudyItem("Dinner", "/ˈdɪnər/", "Cena"),
-                    new StudyItem("Menu", "/ˈmɛnˌju/", "Menú"),
-                    new StudyItem("I would like…", "/aɪ wʊd laɪk/", "Me gustaría…"),
-                    new StudyItem("The bill, please", "/ðə bɪl pliz/", "La cuenta, por favor")
+                    new StudyItem("Water", "uáder", "Agua"),
+                    new StudyItem("Food", "fúd", "Comida"),
+                    new StudyItem("Breakfast", "brékfast", "Desayuno"),
+                    new StudyItem("Lunch", "lanch", "Almuerzo"),
+                    new StudyItem("Dinner", "díner", "Cena"),
+                    new StudyItem("Menu", "méniu", "Menú"),
+                    new StudyItem("I would like…", "ái wud láik", "Me gustaría…"),
+                    new StudyItem("The bill, please", "dha bil, plís", "La cuenta, por favor")
             }),
             new StudyLesson("Compras y situaciones cotidianas", "Frases rápidas para comprar y resolver necesidades básicas.", 9, new StudyItem[]{
-                    new StudyItem("How much is it?", "/haʊ mʌtʃ ɪz ɪt/", "¿Cuánto cuesta?"),
-                    new StudyItem("I like it", "/aɪ laɪk ɪt/", "Me gusta"),
-                    new StudyItem("I need help", "/aɪ nid hɛlp/", "Necesito ayuda"),
-                    new StudyItem("Where can I pay?", "/wɛr kən aɪ peɪ/", "¿Dónde puedo pagar?"),
-                    new StudyItem("Cash", "/kæʃ/", "Efectivo"),
-                    new StudyItem("Card", "/kɑrd/", "Tarjeta"),
-                    new StudyItem("Open", "/ˈoʊpən/", "Abierto"),
-                    new StudyItem("Closed", "/kloʊzd/", "Cerrado")
+                    new StudyItem("How much is it?", "háu mach iz it", "¿Cuánto cuesta?"),
+                    new StudyItem("I like it", "ái láik it", "Me gusta"),
+                    new StudyItem("I need help", "ái níd help", "Necesito ayuda"),
+                    new StudyItem("Where can I pay?", "uér kan ái péi", "¿Dónde puedo pagar?"),
+                    new StudyItem("Cash", "kash", "Efectivo"),
+                    new StudyItem("Card", "kard", "Tarjeta"),
+                    new StudyItem("Open", "óupen", "Abierto"),
+                    new StudyItem("Closed", "klóuzd", "Cerrado")
             })
     };
 
     private final PronunciationLesson[] pronunciationLessons = new PronunciationLesson[]{
-            new PronunciationLesson("Sonido /æ/", "Abre más la boca que para la A española. /æ/ es una vocal breve, como en cat, man y dad.", new PronWord[]{
-                    new PronWord("Cat", "/kæt/", "Gato"),
-                    new PronWord("Man", "/mæn/", "Hombre"),
-                    new PronWord("Dad", "/dæd/", "Papá"),
-                    new PronWord("Family", "/ˈfæməli/", "Familia")
+            new PronunciationLesson("A abierta de CAT", "Abre un poco más la boca que para la A española. Escucha cat, man y dad y copia el audio.", new PronWord[]{
+                    new PronWord("Cat", "kat", "Gato"),
+                    new PronWord("Man", "man", "Hombre"),
+                    new PronWord("Dad", "dad", "Papá"),
+                    new PronWord("Family", "fámali", "Familia")
             }),
-            new PronunciationLesson("Sonido /ɛ/", "Haz una E abierta y breve. /ɛ/ es el sonido de bed, red, pen y ten en inglés estadounidense.", new PronWord[]{
-                    new PronWord("Bed", "/bɛd/", "Cama"),
-                    new PronWord("Red", "/ɹɛd/", "Rojo"),
-                    new PronWord("Pen", "/pɛn/", "Bolígrafo"),
-                    new PronWord("Ten", "/tɛn/", "Diez")
+            new PronunciationLesson("E corta de BED", "Haz una E breve y relajada. Escucha bed, red, pen y ten y evita alargar la vocal.", new PronWord[]{
+                    new PronWord("Bed", "bed", "Cama"),
+                    new PronWord("Red", "red", "Rojo"),
+                    new PronWord("Pen", "pen", "Bolígrafo"),
+                    new PronWord("Ten", "ten", "Diez")
             }),
-            new PronunciationLesson("Sonido /ɪ/", "Es más corta y relajada que la I española. No la conviertas en /iː/. Escucha sit frente a palabras con I larga.", new PronWord[]{
-                    new PronWord("Sit", "/sɪt/", "Sentarse"),
-                    new PronWord("Big", "/bɪɡ/", "Grande"),
-                    new PronWord("Fish", "/fɪʃ/", "Pez"),
-                    new PronWord("Milk", "/mɪlk/", "Leche")
+            new PronunciationLesson("I corta de SIT", "Haz una I corta y relajada. No la alargues. Escucha sit, big, fish y milk y copia el audio.", new PronWord[]{
+                    new PronWord("Sit", "sit", "Sentarse"),
+                    new PronWord("Big", "big", "Grande"),
+                    new PronWord("Fish", "fish", "Pez"),
+                    new PronWord("Milk", "milk", "Leche")
             }),
-            new PronunciationLesson("Sonido /ɑ/", "En inglés estadounidense, /ɑ/ es una vocal abierta y breve, como en hot, mom, box y stop.", new PronWord[]{
-                    new PronWord("Hot", "/hɑt/", "Caliente"),
-                    new PronWord("Mom", "/mɑm/", "Mamá"),
-                    new PronWord("Box", "/bɑks/", "Caja"),
-                    new PronWord("Stop", "/stɑp/", "Parar")
+            new PronunciationLesson("A abierta de HOT", "En inglés de Estados Unidos, hot, mom, box y stop usan una vocal abierta. Escucha primero y luego imita.", new PronWord[]{
+                    new PronWord("Hot", "hat", "Caliente"),
+                    new PronWord("Mom", "mam", "Mamá"),
+                    new PronWord("Box", "baks", "Caja"),
+                    new PronWord("Stop", "stap", "Parar")
             }),
-            new PronunciationLesson("Sonido /ʌ/", "No es una U española. /ʌ/ es una vocal central y breve, como en cup, bus, sun y run.", new PronWord[]{
-                    new PronWord("Cup", "/kʌp/", "Taza"),
-                    new PronWord("Bus", "/bʌs/", "Autobús"),
-                    new PronWord("Sun", "/sʌn/", "Sol"),
-                    new PronWord("Run", "/rʌn/", "Correr")
+            new PronunciationLesson("A corta de CUP", "No suena como una U española. En cup, bus, sun y run escucharás un sonido corto parecido a una A relajada.", new PronWord[]{
+                    new PronWord("Cup", "kap", "Taza"),
+                    new PronWord("Bus", "bas", "Autobús"),
+                    new PronWord("Sun", "san", "Sol"),
+                    new PronWord("Run", "ran", "Correr")
             }),
-            new PronunciationLesson("R estadounidense /ɹ/", "La /ɹ/ estadounidense no vibra como la R española. Lleva la lengua hacia atrás sin tocar el paladar y mantén la R al final de palabras como car o teacher.", new PronWord[]{
-                    new PronWord("Red", "/ɹɛd/", "Rojo"),
-                    new PronWord("Right", "/ɹaɪt/", "Derecha / correcto"),
-                    new PronWord("Road", "/ɹoʊd/", "Carretera"),
-                    new PronWord("Really", "/ˈɹiəli/", "Realmente")
+            new PronunciationLesson("R de Estados Unidos", "La R estadounidense no vibra como la R española. Lleva la lengua un poco hacia atrás sin tocar el paladar.", new PronWord[]{
+                    new PronWord("Red", "red", "Rojo"),
+                    new PronWord("Right", "ráit", "Derecha / correcto"),
+                    new PronWord("Road", "róud", "Carretera"),
+                    new PronWord("Really", "ríali", "Realmente")
             }),
-            new PronunciationLesson("Sonido /w/", "Redondea los labios al comenzar y pásalos rápidamente a la vocal siguiente. No la conviertas en una G española.", new PronWord[]{
-                    new PronWord("Water", "/ˈwɔtər/", "Agua"),
-                    new PronWord("Work", "/wɝk/", "Trabajo"),
-                    new PronWord("Window", "/ˈwɪndoʊ/", "Ventana"),
-                    new PronWord("Week", "/wik/", "Semana")
+            new PronunciationLesson("W de WATER", "Redondea los labios al comenzar y pasa rápido a la vocal siguiente. No la conviertas en una G española.", new PronWord[]{
+                    new PronWord("Water", "uáder", "Agua"),
+                    new PronWord("Work", "uérk", "Trabajo"),
+                    new PronWord("Window", "uíndou", "Ventana"),
+                    new PronWord("Week", "uík", "Semana")
             }),
-            new PronunciationLesson("TH /θ/ y /ð/", "Pon suavemente la lengua entre los dientes. /θ/ no vibra, como en think; /ð/ sí vibra, como en this.", new PronWord[]{
-                    new PronWord("Think", "/θɪŋk/", "Pensar"),
-                    new PronWord("Three", "/θɹi/", "Tres"),
-                    new PronWord("Thank you", "/θæŋk ju/", "Gracias"),
-                    new PronWord("This", "/ðɪs/", "Esto / este")
+            new PronunciationLesson("TH de THINK y THIS", "Pon suavemente la lengua entre los dientes. En think sale aire sin vibración; en this haces el mismo movimiento pero con voz.", new PronWord[]{
+                    new PronWord("Think", "thínk", "Pensar"),
+                    new PronWord("Three", "thrí", "Tres"),
+                    new PronWord("Thank you", "thánk iu", "Gracias"),
+                    new PronWord("This", "dhis", "Esto / este")
             })
     };
 
     private final SoundTile[] vowelSounds = new SoundTile[]{
-            new SoundTile("æ", "cat", "A abierta", "ae"),
-            new SoundTile("ʌ", "cup", "A central", "uh"),
-            new SoundTile("ɪ", "sit", "I corta", "i_short"),
-            new SoundTile("i", "see", "I tensa", "i_long"),
-            new SoundTile("ɛ", "bed", "E abierta", "e_short"),
-            new SoundTile("ɑr", "car", "AR estadounidense", "a_long"),
-            new SoundTile("ɑ", "hot", "O abierta", "o_short"),
-            new SoundTile("ɔ", "saw", "O redondeada", "o_long"),
-            new SoundTile("ʊ", "book", "U corta", "u_short"),
-            new SoundTile("u", "food", "U tensa", "u_long"),
-            new SoundTile("ə", "about", "Schwa", "schwa"),
-            new SoundTile("ɝ", "bird", "ER tónica", "er_long"),
-            new SoundTile("eɪ", "day", "Diptongo", "ay"),
-            new SoundTile("aɪ", "time", "Diptongo", "ai"),
-            new SoundTile("ɔɪ", "boy", "Diptongo", "oi"),
-            new SoundTile("aʊ", "cow", "Diptongo", "au"),
-            new SoundTile("oʊ", "go", "Diptongo", "ou")
+            new SoundTile("A de CAT", "cat", "A abierta", "ae"),
+            new SoundTile("A de CUP", "cup", "A corta", "uh"),
+            new SoundTile("I de SIT", "sit", "I corta", "i_short"),
+            new SoundTile("I de SEE", "see", "I larga", "i_long"),
+            new SoundTile("E de BED", "bed", "E corta", "e_short"),
+            new SoundTile("AR de CAR", "car", "AR estadounidense", "a_long"),
+            new SoundTile("A de HOT", "hot", "A abierta", "o_short"),
+            new SoundTile("O de SAW", "saw", "O redondeada", "o_long"),
+            new SoundTile("U de BOOK", "book", "U corta", "u_short"),
+            new SoundTile("U de FOOD", "food", "U larga", "u_long"),
+            new SoundTile("A suave", "about", "Vocal suave", "schwa"),
+            new SoundTile("ER de BIRD", "bird", "ER fuerte", "er_long"),
+            new SoundTile("EI", "day", "Sonido EI", "ay"),
+            new SoundTile("AI", "time", "Sonido AI", "ai"),
+            new SoundTile("OI", "boy", "Sonido OI", "oi"),
+            new SoundTile("AU", "cow", "Sonido AU", "au"),
+            new SoundTile("OU", "go", "Sonido OU", "ou")
     };
 
     private final SoundTile[] consonantSounds = new SoundTile[]{
-            new SoundTile("b", "book", "B", "b"),
-            new SoundTile("tʃ", "chair", "CH", "ch"),
-            new SoundTile("d", "day", "D", "d"),
-            new SoundTile("f", "fish", "F", "f"),
-            new SoundTile("ɡ", "go", "G", "g"),
-            new SoundTile("h", "home", "H aspirada", "h"),
-            new SoundTile("dʒ", "job", "J inglesa", "dj"),
-            new SoundTile("k", "key", "K", "k"),
-            new SoundTile("l", "lion", "L", "l"),
-            new SoundTile("m", "moon", "M", "m"),
-            new SoundTile("n", "nose", "N", "n"),
-            new SoundTile("ŋ", "sing", "NG", "ng"),
-            new SoundTile("p", "pig", "P", "p"),
-            new SoundTile("ɹ", "red", "R estadounidense", "r"),
-            new SoundTile("s", "see", "S", "s"),
-            new SoundTile("ʃ", "shoe", "SH", "sh"),
-            new SoundTile("t", "time", "T", "t"),
-            new SoundTile("θ", "think", "TH sorda", "th_voiceless"),
-            new SoundTile("ð", "this", "TH sonora", "th_voiced"),
-            new SoundTile("v", "van", "V", "v"),
-            new SoundTile("w", "water", "W", "w"),
-            new SoundTile("j", "yes", "Y", "y"),
-            new SoundTile("z", "zoo", "Z", "z"),
-            new SoundTile("ʒ", "vision", "ZH", "zh")
+            new SoundTile("B", "book", "B", "b"),
+            new SoundTile("CH", "chair", "CH", "ch"),
+            new SoundTile("D", "day", "D", "d"),
+            new SoundTile("F", "fish", "F", "f"),
+            new SoundTile("G", "go", "G", "g"),
+            new SoundTile("H", "home", "H con aire", "h"),
+            new SoundTile("J", "job", "J inglesa", "dj"),
+            new SoundTile("K", "key", "K", "k"),
+            new SoundTile("L", "lion", "L", "l"),
+            new SoundTile("M", "moon", "M", "m"),
+            new SoundTile("N", "nose", "N", "n"),
+            new SoundTile("NG", "sing", "NG", "ng"),
+            new SoundTile("P", "pig", "P", "p"),
+            new SoundTile("R", "red", "R estadounidense", "r"),
+            new SoundTile("S", "see", "S", "s"),
+            new SoundTile("SH", "shoe", "SH", "sh"),
+            new SoundTile("T", "time", "T", "t"),
+            new SoundTile("TH", "think", "TH sin voz", "th_voiceless"),
+            new SoundTile("DH", "this", "TH con voz", "th_voiced"),
+            new SoundTile("V", "van", "V", "v"),
+            new SoundTile("W", "water", "W", "w"),
+            new SoundTile("Y", "yes", "Y", "y"),
+            new SoundTile("Z", "zoo", "Z", "z"),
+            new SoundTile("ZH", "vision", "Sonido de vision", "zh")
     };
 
     private final SoundPair[] soundPairs = new SoundPair[]{
-            new SoundPair("cat", "cut", "æ", "ae"),
-            new SoundPair("bed", "bad", "ɛ", "e_short"),
-            new SoundPair("full", "fool", "ʊ", "u_short"),
-            new SoundPair("sit", "seat", "ɪ", "i_short"),
-            new SoundPair("hat", "hot", "æ", "ae"),
-            new SoundPair("cap", "cup", "æ", "ae"),
-            new SoundPair("pin", "pen", "ɪ", "i_short"),
-            new SoundPair("look", "luck", "ʊ", "u_short"),
-            new SoundPair("fan", "van", "f", "f"),
-            new SoundPair("thin", "sin", "θ", "th_voiceless"),
-            new SoundPair("three", "tree", "θ", "th_voiceless"),
-            new SoundPair("rice", "rise", "s", "s"),
-            new SoundPair("light", "right", "l", "l"),
-            new SoundPair("west", "vest", "w", "w"),
-            new SoundPair("berry", "very", "b", "b"),
-            new SoundPair("coat", "goat", "k", "k"),
-            new SoundPair("cheap", "jeep", "tʃ", "ch"),
-            new SoundPair("think", "sink", "θ", "th_voiceless"),
-            new SoundPair("day", "they", "d", "d"),
-            new SoundPair("fine", "vine", "f", "f")
+            new SoundPair("cat", "cut", "A de CAT", "ae"),
+            new SoundPair("bed", "bad", "E de BED", "e_short"),
+            new SoundPair("full", "fool", "U de BOOK", "u_short"),
+            new SoundPair("sit", "seat", "I de SIT", "i_short"),
+            new SoundPair("hat", "hot", "A de CAT", "ae"),
+            new SoundPair("cap", "cup", "A de CAT", "ae"),
+            new SoundPair("pin", "pen", "I de SIT", "i_short"),
+            new SoundPair("look", "luck", "U de BOOK", "u_short"),
+            new SoundPair("fan", "van", "F", "f"),
+            new SoundPair("thin", "sin", "TH", "th_voiceless"),
+            new SoundPair("three", "tree", "TH", "th_voiceless"),
+            new SoundPair("rice", "rise", "S", "s"),
+            new SoundPair("light", "right", "L", "l"),
+            new SoundPair("west", "vest", "W", "w"),
+            new SoundPair("berry", "very", "B", "b"),
+            new SoundPair("coat", "goat", "K", "k"),
+            new SoundPair("cheap", "jeep", "CH", "ch"),
+            new SoundPair("think", "sink", "TH", "th_voiceless"),
+            new SoundPair("day", "they", "D", "d"),
+            new SoundPair("fine", "vine", "F", "f")
     };
 
     @Override
@@ -948,47 +948,259 @@ public class MainActivity extends Activity {
         setContentView(root);
     }
 
+    /** The map is composed of decorative artwork and individually clickable Android controls. */
     private void showRoute() {
         currentLesson = -1;
-        setRootWithArt(R.drawable.london_route_art);
+        root = new FrameLayout(this);
+        root.setBackgroundColor(Color.rgb(3, 21, 89));
+        setContentView(root);
 
         LinearLayout page = new LinearLayout(this);
         page.setOrientation(LinearLayout.VERTICAL);
-        page.setPadding(dp(14), dp(10), dp(14), dp(0));
+        page.setPadding(dp(9), dp(6), dp(9), dp(3));
         root.addView(page, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-        page.addView(buildHud());
+        page.addView(gameResourceHud(), matchWrapMargin(0, 0, 0, 7));
+        int current = firstNotCompletedGameLesson();
+        FrameLayout header = new FrameLayout(this);
+        GradientDrawable hero = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{Color.rgb(0,192,255),Color.rgb(0,106,244),Color.rgb(11,69,195)});
+        hero.setCornerRadius(dp(24));
+        hero.setStroke(dp(3),Color.rgb(58,233,255));
+        header.setBackground(hero);
+        header.setElevation(dp(8));
+        LinearLayout headings = new LinearLayout(this);
+        headings.setOrientation(LinearLayout.VERTICAL);
+        headings.setPadding(dp(18),dp(12),dp(64),dp(11));
+        headings.addView(label("ETAPA 1  •  AVENTURA EN LONDRES",12,Color.WHITE,true));
+        TextView mainTitle = label(current >= 10 ? "¡ETAPA COMPLETADA!" : "LECCIÓN " + (current+1),30,Color.WHITE,true);
+        mainTitle.setShadowLayer(dp(2),0,dp(2),Color.rgb(9,46,146));
+        headings.addView(mainTitle);
+        header.addView(headings);
+        TextView menu = label("☷",31,Color.rgb(0,91,218),true);
+        menu.setGravity(Gravity.CENTER);
+        menu.setContentDescription("Elegir sección del mapa");
+        menu.setBackground(roundRect(Color.rgb(240,251,255),16,Color.WHITE,2));
+        FrameLayout.LayoutParams menuLp = new FrameLayout.LayoutParams(dp(47),dp(48),Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+        menuLp.rightMargin = dp(11);
+        header.addView(menu,menuLp);
+        page.addView(header, matchWrapMargin(0,0,0,9));
 
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
+        scroll.setVerticalScrollBarEnabled(false);
         scroll.setClipToPadding(false);
-        LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f);
-        sp.topMargin = dp(8);
-        page.addView(scroll, sp);
-
-        LinearLayout body = new LinearLayout(this);
-        body.setOrientation(LinearLayout.VERTICAL);
-        body.setPadding(dp(6), dp(8), dp(6), dp(28));
-        scroll.addView(body, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-        LinearLayout intro = cardColumn();
-        intro.setPadding(dp(22), dp(18), dp(22), dp(18));
-        intro.addView(label("🗺️  TU AVENTURA EN LONDRES", 14, BLUE, true));
-        TextView routeTitle = label("Tu próxima misión te espera", 29, BLUE_DARK, true);
-        routeTitle.setPadding(0, dp(6), 0, 0);
-        intro.addView(routeTitle);
-        TextView routeSub = label("Supera cada misión, gana XP y desbloquea el siguiente destino de tu aventura.", 17, MUTED, false);
-        routeSub.setPadding(0, dp(6), 0, 0);
-        intro.addView(routeSub);
-        body.addView(intro, matchWrapMargin(0, 0, 0, 18));
-
-        for (int i = 0; i < lessons.length; i++) {
-            boolean unlocked = i == 0 || prefs.getBoolean("lesson_" + (i - 1), false);
-            body.addView(lessonRow(i, lessonIcons[i], unlocked));
-            if (i < lessons.length - 1) body.addView(connector());
-        }
-
+        LinearLayout maps = new LinearLayout(this);
+        maps.setOrientation(LinearLayout.VERTICAL);
+        // The physical adventure climbs from Lesson 1 at the bottom to Lesson 10 at the summit.
+        final int mapWidth = getResources().getDisplayMetrics().widthPixels - dp(18);
+        final int mapHeight = Math.max(dp(780),Math.round(mapWidth * 1.80f));
+        maps.addView(gameMapSection(5,mapWidth,mapHeight,R.drawable.game_london_night_2));
+        maps.addView(gameMapSection(0,mapWidth,mapHeight,R.drawable.game_london_night));
+        scroll.addView(maps);
+        page.addView(scroll,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,0,1f));
         page.addView(bottomNav(0));
+
+        // Start near the first incomplete mission instead of dumping a new player at the summit.
+        int section = current >= 5 ? 1 : 0;
+        final int next = Math.min(current,9);
+        final float[] levelY={.83f,.68f,.535f,.39f,.245f};
+        final int targetCenter=(section==0 ? mapHeight : 0) +
+                Math.round(levelY[next%5]*mapHeight);
+        scroll.post(() -> scroll.scrollTo(0,Math.max(0,targetCenter-scroll.getHeight()/2)));
+        menu.setOnClickListener(v -> new android.app.AlertDialog.Builder(this)
+                .setTitle("🗺️  Tu aventura")
+                .setItems(new String[]{"Sección 1 · Lecciones 1–5", "Sección 2 · Lecciones 6–10"},
+                        (dialog,selected) -> {
+                            if (selected == 1 && !prefs.getBoolean("lesson_4",false)) {
+                                Toast.makeText(this,"Completa la lección 5 para desbloquear esta sección",Toast.LENGTH_LONG).show();
+                                return;
+                            }
+                            scroll.smoothScrollTo(0,selected == 0 ? mapHeight : 0);
+                        })
+                .setNegativeButton("CERRAR",null).show());
+    }
+
+    private int firstNotCompletedGameLesson() {
+        for (int i=0;i<lessons.length;i++) if (!prefs.getBoolean("lesson_"+i,false)) return i;
+        return lessons.length;
+    }
+
+    private GradientDrawable gameGradient(int c1,int c2,int border,int radDp) {
+        GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{c1,c2});
+        bg.setCornerRadius(dp(radDp));
+        bg.setStroke(dp(2),border);
+        return bg;
+    }
+
+    private LinearLayout gameResourceHud() {
+        LinearLayout bar = new LinearLayout(this);
+        bar.setOrientation(LinearLayout.HORIZONTAL);
+        bar.setGravity(Gravity.CENTER);
+        bar.setPadding(dp(2),dp(3),dp(2),dp(3));
+        bar.setBackground(gameGradient(Color.rgb(6,42,128),Color.rgb(3,18,75),Color.rgb(29,88,209),16));
+        String[] icons = {"❤️","🔥","💎","⚡"};
+        String[] amounts = {""+prefs.getInt("hearts",5),""+prefs.getInt("streak",0),
+                ""+prefs.getInt("coins",0),""+prefs.getInt("xp",0)};
+        String[] descriptions={"Vidas disponibles","Racha de días consecutivos","Monedas por completar misiones","Experiencia obtenida al estudiar"};
+        for (int i=0;i<4;i++) {
+            final String description=descriptions[i];
+            LinearLayout chip = new LinearLayout(this);
+            chip.setGravity(Gravity.CENTER);
+            chip.setOrientation(LinearLayout.HORIZONTAL);
+            chip.setPadding(dp(2),dp(8),dp(2),dp(8));
+            chip.setBackground(gameGradient(Color.rgb(8,81,200),Color.rgb(3,42,124),Color.rgb(18,156,255),16));
+            chip.setElevation(dp(3));
+            TextView icon = label(icons[i],18,Color.WHITE,true);
+            chip.addView(icon);
+            TextView amount=label(" " + amounts[i],16,Color.WHITE,true);
+            chip.addView(amount);
+            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(0,dp(48),1f);
+            if(i>0) clp.leftMargin=dp(5);
+            bar.addView(chip,clp);
+            chip.setContentDescription(description+": "+amounts[i]);
+            chip.setOnClickListener(v -> new android.app.AlertDialog.Builder(this)
+                    .setMessage(description+".\n\nGana XP y monedas completando lecciones; mantén tu racha practicando cada día.")
+                    .setPositiveButton("ENTENDIDO",null).show());
+        }
+        return bar;
+    }
+
+    private FrameLayout gameMapSection(int first,int mapWidth,int mapHeight,int scenery) {
+        FrameLayout map = new FrameLayout(this);
+        map.setClipChildren(false);
+        map.setClipToPadding(false);
+        map.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,mapHeight));
+        ImageView background = new ImageView(this);
+        background.setImageResource(scenery);
+        background.setScaleType(ImageView.ScaleType.FIT_XY);
+        background.setContentDescription("Paisaje nocturno de Londres, cascadas, islas y el pajarito de Bluelingo");
+        map.addView(background,new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT));
+        GameTrailView line = new GameTrailView(this);
+        map.addView(line,new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT));
+        // Separate native node views. Unlock states depend on persistent SharedPreferences.
+        float[] ys={.83f,.68f,.535f,.39f,.245f};
+        float[] xs={.52f,.49f,.54f,.48f,.53f};
+        for (int step=0;step<5;step++) {
+            int index=first+step;
+            boolean done=prefs.getBoolean("lesson_"+index,false);
+            boolean unlocked=index==0 || prefs.getBoolean("lesson_"+(index-1),false);
+            final int fi=index;
+            LinearLayout entry=gameMapNode("Lección "+(index+1),step,done,unlocked);
+            positionGameNode(map,entry,mapWidth,mapHeight,xs[step],ys[step],dp(132),dp(118));
+            entry.setOnClickListener(v -> openGameLesson(fi));
+        }
+        final int chestSection=first/5;
+        boolean chestClaimed=prefs.getBoolean("chest_"+chestSection,false);
+        FrameLayout chest=new FrameLayout(this);
+        chest.setContentDescription("Cofre de recompensa de la sección "+(chestSection+1));
+        ImageView chestIcon=new ImageView(this);
+        chestIcon.setImageResource(R.drawable.game_treasure);
+        chestIcon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        chest.addView(chestIcon,new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT));
+        if(chestClaimed) {
+            TextView claimed=label("✓",26,Color.WHITE,true);
+            claimed.setGravity(Gravity.CENTER);
+            claimed.setBackground(roundRect(GREEN,100,Color.WHITE,2));
+            FrameLayout.LayoutParams check=new FrameLayout.LayoutParams(dp(35),dp(35),Gravity.RIGHT|Gravity.BOTTOM);
+            chest.addView(claimed,check);
+        }
+        positionGameNode(map,chest,mapWidth,mapHeight,.51f,.105f,dp(110),dp(104));
+        chest.setOnClickListener(v -> openGameTreasure(chestSection));
+        return map;
+    }
+
+    private void positionGameNode(FrameLayout map,View node,int mapWidth,int mapHeight,float cx,float cy,int w,int h) {
+        FrameLayout.LayoutParams np=new FrameLayout.LayoutParams(w,h);
+        np.leftMargin=Math.max(0,Math.round(cx*mapWidth-w/2f));
+        np.topMargin=Math.max(0,Math.round(cy*mapHeight-h/2f));
+        map.addView(node,np);
+    }
+
+    private LinearLayout gameMapNode(String title,int glyph,boolean complete,boolean unlocked) {
+        LinearLayout entry=new LinearLayout(this);
+        entry.setGravity(Gravity.CENTER_HORIZONTAL);
+        entry.setOrientation(LinearLayout.VERTICAL);
+        entry.setClipChildren(false);
+        entry.setClipToPadding(false);
+        int top=unlocked?(complete?Color.rgb(50,244,120):Color.rgb(39,250,235)):Color.rgb(132,146,181);
+        int bottom=unlocked?(complete?Color.rgb(0,147,78):Color.rgb(0,95,230)):Color.rgb(64,82,115);
+        FrameLayout circle=new FrameLayout(this);
+        circle.setBackground(new GameOrbDrawable(!unlocked ? GameOrbDrawable.LOCKED :
+                complete ? GameOrbDrawable.COMPLETE : GameOrbDrawable.AVAILABLE));
+        circle.setElevation(dp(unlocked?11:4));
+        GameSymbolView symbol=new GameSymbolView(this,glyph);
+        circle.addView(symbol,new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT));
+        if(!unlocked) {
+            TextView lock=label("🔒",20,Color.WHITE,true);
+            lock.setGravity(Gravity.CENTER);
+            FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(dp(32),dp(32),Gravity.RIGHT|Gravity.BOTTOM);
+            circle.addView(lock,lp);
+        }
+        if(complete) {
+            TextView tick=label("✓",19,Color.WHITE,true);
+            tick.setGravity(Gravity.CENTER);
+            tick.setBackground(roundRect(GREEN,100,Color.WHITE,2));
+            FrameLayout.LayoutParams tp=new FrameLayout.LayoutParams(dp(30),dp(30),Gravity.RIGHT|Gravity.BOTTOM);
+            tp.rightMargin=dp(0); tp.bottomMargin=dp(0);
+            circle.addView(tick,tp);
+        }
+        LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(84),dp(84));
+        cp.bottomMargin=dp(4);
+        entry.addView(circle,cp);
+        TextView caption=label(title,13,Color.WHITE,true);
+        caption.setGravity(Gravity.CENTER);
+        caption.setPadding(dp(9),dp(5),dp(9),dp(5));
+        caption.setBackground(gameGradient(unlocked?Color.rgb(4,108,253):Color.rgb(72,82,117),
+                unlocked?Color.rgb(5,42,186):Color.rgb(44,55,89),
+                unlocked?Color.rgb(100,250,255):Color.rgb(156,174,198),50));
+        caption.setElevation(dp(5));
+        entry.addView(caption,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT));
+        entry.setContentDescription(title+(complete?", completada":unlocked?", disponible":", bloqueada"));
+        entry.setClickable(true);
+        entry.setFocusable(true);
+        if(unlocked && !complete) circle.animate().scaleX(1.035f).scaleY(1.035f).setDuration(270).start();
+        return entry;
+    }
+
+    private void openGameLesson(int index) {
+        boolean done=prefs.getBoolean("lesson_"+index,false);
+        boolean unlocked=index==0 || prefs.getBoolean("lesson_"+(index-1),false);
+        if(!unlocked) {
+            Toast.makeText(this,"🔒 Completa la lección "+index+" para desbloquearla",Toast.LENGTH_LONG).show();
+            return;
+        }
+        Lesson chosen=lessons[index];
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("⭐ LECCIÓN " +(index+1)+" · "+chosen.title)
+                .setMessage(chosen.subtitle+"\n\n"+(done?"Ya completaste esta misión. Puedes volver a jugarla.":"Recompensa al completar: +50 XP y +15 monedas."))
+                .setPositiveButton(done?"REPETIR":"EMPEZAR",(dialog,which)->startLessonFromRoute(index))
+                .setNegativeButton("CANCELAR",null)
+                .show();
+    }
+
+    private void openGameTreasure(int section) {
+        if(prefs.getBoolean("chest_"+section,false)) {
+            new android.app.AlertDialog.Builder(this).setTitle("🎁 Cofre abierto")
+                    .setMessage("Ya reclamaste la recompensa de esta sección.")
+                    .setPositiveButton("ENTENDIDO",null).show();
+            return;
+        }
+        int last=(section+1)*5-1;
+        if(!prefs.getBoolean("lesson_"+last,false)) {
+            new android.app.AlertDialog.Builder(this).setTitle("🔒 Cofre bloqueado")
+                    .setMessage("Completa las lecciones "+(section*5+1)+" a "+(last+1)+" para abrirlo.")
+                    .setPositiveButton("ENTENDIDO",null).show();
+            return;
+        }
+        // Claim exactly once, including on repeated taps.
+        prefs.edit().putBoolean("chest_"+section,true)
+                .putInt("coins",prefs.getInt("coins",0)+35)
+                .putInt("xp",prefs.getInt("xp",0)+20).apply();
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("🎉 ¡COFRE ABIERTO!")
+                .setMessage("¡Recompensa conseguida!\n\n💎 +35 monedas\n⚡ +20 XP")
+                .setPositiveButton("CONTINUAR",(d,w)->showRoute()).show();
     }
 
     private LinearLayout buildHud() {
@@ -1256,17 +1468,25 @@ public class MainActivity extends Activity {
         title.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
         title.setPadding(0, dp(6), 0, 0);
         intro.addView(title);
-        TextView desc = label(lesson.subtitle + " La columna central usa IPA de inglés estadounidense. Toca 🔊 para escuchar y repite en voz alta.", 16, MUTED, false);
+        TextView desc = label(lesson.subtitle + " La columna central muestra cómo suena usando letras fáciles para hispanohablantes. Toca 🔊 para escuchar la pronunciación real de Estados Unidos.", 16, MUTED, false);
         desc.setPadding(0, dp(8), 0, 0);
         intro.addView(desc);
         body.addView(intro, matchWrapMargin(0, 0, 0, 12));
+
+        LinearLayout easyGuide = cardColumn();
+        easyGuide.setPadding(dp(14), dp(12), dp(14), dp(12));
+        easyGuide.addView(label("💡 Cómo leerla", 15, BLUE_DARK, true));
+        TextView easyGuideText = label("h = aire suave · th = lengua entre los dientes · dh = el mismo TH pero con voz · sh = sonido \"sh\" · r = R inglesa sin vibrar", 13, MUTED, false);
+        easyGuideText.setPadding(0, dp(4), 0, 0);
+        easyGuide.addView(easyGuideText);
+        body.addView(easyGuide, matchWrapMargin(0, 0, 0, 12));
 
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setPadding(dp(14), dp(12), dp(14), dp(12));
         header.setBackground(roundRect(Color.rgb(7, 35, 61), 14, Color.TRANSPARENT, 0));
         TextView h1 = label("INGLÉS", 13, Color.WHITE, true);
-        TextView h2 = label("IPA EE. UU.", 12, Color.WHITE, true);
+        TextView h2 = label("CÓMO SUENA", 12, Color.WHITE, true);
         TextView h3 = label("ESPAÑOL", 13, Color.WHITE, true);
         header.addView(h1, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.05f));
         header.addView(h2, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.15f));
@@ -1382,7 +1602,7 @@ public class MainActivity extends Activity {
 
         LinearLayout intro = cardColumn();
         intro.setPadding(dp(22), dp(19), dp(22), dp(19));
-        intro.addView(label("PRONUNCIACIÓN IPA · INGLÉS EE. UU. · LECCIÓN " + (index + 1), 12, GREEN, true));
+        intro.addView(label("PRONUNCIACIÓN FÁCIL · INGLÉS EE. UU. · LECCIÓN " + (index + 1), 12, GREEN, true));
         TextView title = label(lesson.title, 29, BLUE_DARK, true);
         title.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
         title.setPadding(0, dp(7), 0, 0);
@@ -1530,7 +1750,7 @@ public class MainActivity extends Activity {
         title.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
         title.setPadding(0, dp(5), 0, 0);
         hero.addView(title);
-        TextView copy = label("Entrena tu oído, distingue sonidos parecidos y aprende a pronunciar palabras con más claridad.", 16, MUTED, false);
+        TextView copy = label("Entrena tu oído con palabras reales. Aquí no usamos símbolos fonéticos difíciles: escuchas, comparas y repites.", 16, MUTED, false);
         copy.setPadding(0, dp(8), 0, dp(16));
         hero.addView(copy);
         TextView start = actionButton("▶  EMPEZAR LECCIÓN", Color.rgb(72, 184, 238), Color.WHITE);
@@ -1585,9 +1805,9 @@ public class MainActivity extends Activity {
         card.setBackground(roundRect(Color.argb(248, 255, 255, 255), 20, Color.rgb(169, 211, 236), 2));
         card.setElevation(dp(3));
 
-        TextView ipa = label(sound.symbol, 24, BLUE_DARK, true);
-        ipa.setGravity(Gravity.CENTER);
-        card.addView(ipa);
+        TextView soundName = label(sound.symbol, 18, BLUE_DARK, true);
+        soundName.setGravity(Gravity.CENTER);
+        card.addView(soundName);
         TextView example = label(sound.example, 13, MUTED, false);
         example.setGravity(Gravity.CENTER);
         example.setPadding(0, dp(2), 0, dp(7));
@@ -1725,7 +1945,7 @@ public class MainActivity extends Activity {
         boolean correct = selectedSoundAnswer.equalsIgnoreCase(currentSoundPair.correct);
         if (correct) {
             soundQuizCorrect++;
-            soundFeedback.setText("✓ ¡Correcto!  /" + currentSoundPair.soundSymbol + "/");
+            soundFeedback.setText("✓ ¡Correcto!  Sonido: " + currentSoundPair.soundSymbol);
             soundFeedback.setTextColor(GREEN);
             int skill = Math.min(5, prefs.getInt("sound_skill_" + currentSoundPair.skillKey, 0) + 1);
             prefs.edit()
@@ -1920,6 +2140,19 @@ public class MainActivity extends Activity {
         });
         notificationCard.addView(notify);
         body.addView(notificationCard, matchWrapMargin(0, 0, 0, 12));
+
+        TextView privacy = actionButton("🔒  POLÍTICA DE PRIVACIDAD", Color.WHITE, BLUE);
+        privacy.setBackground(roundRect(Color.WHITE, 18, BLUE, 2));
+        privacy.setOnClickListener(v -> {
+            try {
+                Intent browser = new Intent(Intent.ACTION_VIEW,
+                        Uri.parse("https://www.aprendegratisingles.com/p/politica-de-privacidad-de-bluelingo.html"));
+                startActivity(browser);
+            } catch (Throwable ex) {
+                Toast.makeText(this, "No se pudo abrir la política de privacidad", Toast.LENGTH_LONG).show();
+            }
+        });
+        body.addView(privacy, matchWrapMargin(0, 0, 0, 12));
 
         TextView refill = actionButton("❤️  RECARGAR CORAZONES", Color.WHITE, BLUE);
         refill.setBackground(roundRect(Color.WHITE, 18, BLUE, 2));

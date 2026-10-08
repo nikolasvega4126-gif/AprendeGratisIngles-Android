@@ -1,28 +1,20 @@
-# Bluelingo V8.1.1 - Google Play
+# Bluelingo 8.3.0: compilar para Google Play
 
-Este proyecto incluye el workflow `.github/workflows/build-play-aab.yml` para crear un Android App Bundle firmado.
+- Paquete Android: `com.aprendegratisingles.app`
+- `versionName`: `8.3.0`
+- `versionCode`: **46** (posterior al código 42 de la prueba cerrada)
+- `compileSdk / targetSdk`: 36
 
-## Secretos necesarios en GitHub
+## 1. APK para probar en el teléfono
 
-En el repositorio: Settings > Secrets and variables > Actions > New repository secret.
+Sube **los archivos descomprimidos** de este proyecto al mismo repositorio GitHub, con su estructura de carpetas intacta. GitHub Actions → **Build and validate Android APK** → ejecuta o espera a que el push dispare el flujo. Si finaliza correctamente, descarga el artefacto `Bluelingo-v8.3.0-apk` e instala `app-debug.apk` en un dispositivo de prueba.
 
-Crea estos 3 secretos:
+## 2. AAB para Google Play
 
-- `BLUELINGO_UPLOAD_KEYSTORE_BASE64`: contenido completo de `bluelingo-upload-key-base64.txt`
-- `BLUELINGO_UPLOAD_STORE_PASSWORD`: valor de `Keystore password` en `credentials.txt`
-- `BLUELINGO_UPLOAD_KEY_PASSWORD`: valor de `Key password` en `credentials.txt`
+GitHub Actions → **Build unsigned Play AAB v8.3.0** → `Run workflow`. El archivo AAB generado es **sin firma** y todavía NO se puede subir a Play Console. Debes firmarlo con el **keystore de subida original usado para la versión 42** y verificar la firma. No crees otro keystore, porque Google podría rechazar la actualización.
 
-No subas el archivo `.jks`, `credentials.txt` ni el Base64 al repositorio público.
+El flujo antiguo `build-play-aab.yml` dependía de secretos que antes dieron errores de reconstrucción/contraseña. Este ZIP incluye la ruta de compilación sin firma para mantener separados la compilación y el firmado.
 
-## Compilar
+## Seguridad
 
-GitHub > Actions > Build signed Play AAB > Run workflow.
-
-Al terminar en verde, descarga el artefacto `Bluelingo-v8.1.1-play-aab`.
-El archivo `Bluelingo-v8.1.1-play.aab` es el que se sube a Google Play Console.
-
-## Clave de carga
-
-Alias: `bluelingo_upload`
-
-Guarda para siempre el `.jks` y `credentials.txt`. Se necesitarán para futuras actualizaciones de la app.
+Nunca subas el `.jks`, contraseñas ni texto Base64 del keystore al repositorio. Esta entrega tampoco los incluye.

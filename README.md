@@ -1,29 +1,11 @@
-# Bluelingo 8.1.1 — sonidos, perfil y video de inicio
+# Bluelingo 8.3.0 · Aventura en Londres
 
-Evolución sobre la base estable 8.0.0.
+Proyecto Android nativo (`com.aprendegratisingles.app`).
 
-## Cambios principales
+La primera fase del rediseño estilo videojuego implementa una **ruta de diez lecciones** en dos tramos, con ilustración nocturna de Londres, personaje azul, orbes 3D, niveles con desbloqueo real, XP, monedas, rachas y cofres reclamables una sola vez. Los nodos son vistas Android interactivas (no capturas con zonas táctiles falsas). Los ejercicios existentes conservan su funcionalidad, audio estadounidense y guías de pronunciación para principiantes.
 
-- Marca visible corregida a **Bluelingo**.
-- Video de inicio nativo (`res/raw/startup.mp4`) en cada arranque en frío.
-- Si la app queda en segundo plano menos de 3 minutos, vuelve exactamente donde estaba sin mostrar el video.
-- Si permanece fuera 3 minutos o más, el video se reproduce al regresar y después continúa en la misma pantalla.
-- Barra inferior simplificada a **Ruta · Practicar · Sonidos · Perfil**.
-- Nueva sección **Sonidos** con vocales y consonantes, símbolos fonéticos, ejemplos y progreso.
-- Entrenamiento auditivo aleatorio de 10 preguntas por sesión, audio automático y botón para repetir.
-- Banco amplio de pares auditivos; no usa siempre las mismas palabras.
-- XP y progreso de pronunciación guardados localmente.
-- Perfil rediseñado con avatar seleccionable desde la galería, estadísticas, nivel, logros y recordatorios.
-- Practicar continúa siendo 100% nativo, sin WebView.
-- Se mantienen Ruta, lecciones, TTS, micrófono, corazones, XP, racha, onboarding y notificaciones.
+Video de inicio y onboarding de jugador de 8.2.x se mantienen. Se agregó el acceso público a la política de privacidad desde Perfil.
 
-## Versión
+**Compilación:** GitHub Actions → `Build and validate Android APK` → artifact `Bluelingo-v8.3.0-apk`; para la tienda `Build unsigned Play AAB v8.3.0` y firmar el AAB con **el keystore de subida original**. Código de versión `46` y nombre de versión `8.3.0`. El AAB sin firmar **no sirve para subirlo directamente a Play**.
 
-- `versionName = 8.1.1`
-- `versionCode = 41`
-
-
-## Corrección V8.1.1
-- Video de inicio renderizado con TextureView + MediaPlayer para evitar audio con pantalla negra.
-- Video H.264 Baseline para mayor compatibilidad entre dispositivos Android.
-- Prueba automática captura el splash durante la reproducción y rechaza una pantalla prácticamente negra.
+Esta entrega contiene proyecto fuente y arte incluido; no incluye APK firmado ni certificación de que el build haya pasado un emulador. Consultar `REDISENO_AVENTURA_V8_3_0.md`.
